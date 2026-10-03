@@ -26,6 +26,9 @@ public struct DeviceDetailView: View {
     @State private var wigleResult: WigleResult?
     @State private var wigleError: String?
     @State private var wigleLoading: Bool = false
+    @State private var gattInfo: GattInfo?
+    @State private var gattLoading: Bool = false
+    @State private var gattFailed: Bool = false
     
     public init(sighting: Sighting, viewModel: FieldwatchViewModel) {
         self.sighting = sighting
@@ -121,6 +124,53 @@ public struct DeviceDetailView: View {
                     }
                 }
 
+                // GATT read (BLE, connectable only): real manufacturer/model/serial.
+                if sighting.kind == .ble && sighting.facts.isConnectable == true {
+                    Section("GATT Bilgisi") {
+                        if gattLoading {
+                            Text("Okunuyor… (10 sn)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else if let g = gattInfo {
+                            if let m = g.manufacturer {
+                                HStack { Text("Üretici"); Spacer(); Text(m).font(.caption.monospaced()) }
+                            }
+                            if let m = g.model {
+                                HStack { Text("Model"); Spacer(); Text(m).font(.caption.monospaced()) }
+                            }
+                            if let s = g.serial {
+                                HStack { Text("Seri"); Spacer(); Text(s).font(.caption.monospaced()) }
+                            }
+                            if let f = g.firmware {
+                                HStack { Text("Firmware"); Spacer(); Text(f).font(.caption.monospaced()) }
+                            }
+                            if !g.services.isEmpty {
+                                Text("Servisler: \(g.services.joined(separator: ", "))")
+                                    .font(.system(size: 10, design: .monospaced))
+                                    .foregroundColor(.secondary)
+                            }
+                        } else {
+                            Button("Cihaza Bağlanıp Oku") {
+                                gattFailed = false
+                                gattLoading = true
+                                BleScanner.shared.readGatt(id: sighting.identifier) { info in
+                                    gattInfo = info
+                                    gattFailed = (info == nil)
+                                    gattLoading = false
+                                }
+                            }
+                            if gattFailed {
+                                Text("Okunamadı (cihaz reddetti veya menzilden çıktı).")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            Text("Kısa süreli bağlanır, bilgileri okur, hemen ayrılır.")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
                 // Hunt & Locate action
                 Section {
                     Button {
@@ -144,7 +194,18 @@ public struct DeviceDetailView: View {
                 // is done in your own router's admin page.
                 if sighting.kind == .wifi {
                     Section("Ağ İşlemleri") {
-                        Button {
+                        if let ch = sighting.channel {
+                            HStack {
+                                Text("Kanal")
+                                Spacer()
+                                Text("\(ch)").font(.caption.monospaced())
+                            }
+                        }
+                        if RadioDb.shared.isRandomized(sighting.identifier) {
+                            Text("Lokal yönetimli BSSID: sanal/misafir ağ olabilir, OUI üretici bilgisi gerçek olmayabilir.")
+                                .font(.caption)
+                                .foregroundColor(.orange)
+                        }                        Button {
                             UIPasteboard.general.string = "\(sighting.displayName)\n\(sighting.identifier)"
                             copied = true
                         } label: {

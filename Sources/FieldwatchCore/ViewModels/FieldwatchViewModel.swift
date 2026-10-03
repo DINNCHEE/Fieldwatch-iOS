@@ -137,6 +137,10 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
             sighting.rssiSamples.removeFirst(sighting.rssiSamples.count - 40)
         }
 
+        if let ch = observation.channel {
+            sighting.channel = ch
+        }
+
         // Custom bookmark overlay (advertised name stays intact for matching)
         let isFirstSighting = (sighting.count == 1)
         if let custom = Persistence.shared.custom(id: id) {

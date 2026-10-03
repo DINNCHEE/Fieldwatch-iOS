@@ -381,15 +381,184 @@ extension LanDiscovery {
     private func probeHost(_ host: String) {
         for (port, label) in Self.sweepPorts {
             if tryTcp(host: host, port: port, timeout: 0.35) {
+                let short = shortLabel(for: port)
+                var display = "\(label) @ \(host)"
+                if let name = fingerprintName(host: host) {
+                    display = "\(name) · \(short) @ \(host)"
+                } else {
+                    display = "\(label) @ \(host)"
+                }
                 let obs = Observation(
                     timestamp: Date(), kind: .wifi,
-                    identifier: host, name: "\(label) @ \(host)",
+                    identifier: host, name: display,
                     rssi: -60, location: nil, facts: RadioFacts()
                 )
                 delegate?.wifiScannerDidObserve(obs)
                 return
             }
         }
+    }
+
+    private func shortLabel(for port: UInt16) -> String {
+        switch port {
+        case 62078: return "iPhone/iPad"
+        case 7000: return "AirPlay"
+        case 8009: return "Chromecast"
+        case 1400: return "Sonos"
+        case 9100, 631: return "Yazıcı"
+        case 80, 443: return "Web"
+        case 22: return "SSH"
+        default: return "Ağ"
+        }
+    }
+
+    /// Best-effort LAN fingerprint: reverse DNS → NetBIOS → WS-Discovery.
+    private func fingerprintName(host: String) -> String? {
+        if let rdns = reverseDNS(ip: host), looksUsefulHostname(rdns) {
+            return rdns
+        }
+        if let nb = netbiosName(host: host) {
+            return nb
+        }
+        if let wsd = wsDiscoveryName(host: host) {
+            return wsd
+        }
+        return nil
+    }
+
+    private func looksUsefulHostname(_ name: String) -> Bool {
+        let n = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !n.isEmpty, n.count <= 64 else { return false }
+        // Skip bare IPs and gateway-echo answers.
+        if n.range(of: #"^\d+\.\d+\.\d+\.\d+$"#, options: .regularExpression) != nil { return false }
+        return true
+    }
+
+    private func reverseDNS(ip: String) -> String? {
+        var addr = in_addr()
+        guard inet_pton(AF_INET, ip, &addr) == 1 else { return nil }
+        var sa = sockaddr_in()
+        sa.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        sa.sin_family = sa_family_t(AF_INET)
+        sa.sin_addr = addr
+        var host = [CChar](repeating: 0, count: 256)
+        let rc = withUnsafePointer(to: &sa) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                getnameinfo($0, socklen_t(MemoryLayout<sockaddr_in>.size),
+                            &host, socklen_t(host.count), nil, 0, 0)
+            }
+        }
+        guard rc == 0 else { return nil }
+        let name = String(cString: host)
+        if name == ip || name.isEmpty { return nil }
+        // Strip trailing dot + local suffixes for display.
+        var short = name
+        if short.hasSuffix(".") { short = String(short.dropLast()) }
+        return short
+    }
+
+    /// One-shot UDP query helper. Returns the first datagram or nil.
+    private func udpQuery(host: String, port: UInt16, payload: Data, timeout: TimeInterval) -> Data? {
+        guard let nwPort = NWEndpoint.Port(rawValue: port) else { return nil }
+        let conn = NWConnection(host: .name(host, nil), port: nwPort, using: .udp)
+        let sema = DispatchSemaphore(value: 0)
+        var answer: Data?
+        conn.stateUpdateHandler = { state in
+            if case .ready = state {
+                conn.send(content: payload, completion: .contentProcessed({ _ in
+                    conn.receiveMessage { data, _, _, _ in
+                        if let data = data { answer = data }
+                        sema.signal()
+                    }
+                }))
+            } else if case .failed = state {
+                sema.signal()
+            }
+        }
+        conn.start(queue: .global(qos: .utility))
+        _ = sema.wait(timeout: .now() + timeout)
+        conn.cancel()
+        return answer
+    }
+
+    /// NetBIOS Node Status (NBSTAT, UDP 137): classic Windows/Samba/NAS namer.
+    private func netbiosName(host: String) -> String? {
+        var packet = Data(count: 50)
+        // Header: random TID, flags 0, QDCOUNT 1.
+        packet[0] = UInt8.random(in: 0...255)
+        packet[1] = UInt8.random(in: 0...255)
+        packet[5] = 1
+        // Question: 0x20 + "CK" + 30x"A" (wildcard *) + 0x00 + NBSTAT + IN.
+        packet[12] = 0x20
+        let encoded = Array("CKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA".utf8)
+        for (i, byte) in encoded.enumerated() { packet[13 + i] = byte }
+        packet[45] = 0x00
+        packet[46] = 0x00; packet[47] = 0x21
+        packet[48] = 0x00; packet[49] = 0x01
+        guard let resp = udpQuery(host: host, port: 137, payload: packet, timeout: 0.5),
+              resp.count > 50 else { return nil }
+        // Skip header (12) + question (up to first 0x00 after offset 12).
+        var cursor = 13
+        while cursor < resp.count && resp[cursor] != 0x00 { cursor += 1 }
+        cursor += 1 + 2 + 2 + 4 // null + type + class + TTL
+        guard cursor + 2 <= resp.count else { return nil }
+        let rdlen = (Int(resp[cursor]) << 8) | Int(resp[cursor + 1])
+        cursor += 2
+        guard rdlen > 1, cursor + rdlen <= resp.count else { return nil }
+        let numNames = Int(resp[cursor])
+        cursor += 1
+        var workstation: String?
+        var server: String?
+        for _ in 0..<numNames {
+            guard cursor + 18 <= resp.count else { break }
+            let raw = resp[cursor..<(cursor + 15)]
+            let suffix = resp[cursor + 15]
+            var name = String(data: raw, encoding: .ascii) ?? ""
+            name = name.trimmingCharacters(in: .whitespacesAndNewlines
+                .union(CharacterSet.controlCharacters))
+            if !name.isEmpty {
+                if suffix == 0x00 && workstation == nil { workstation = name }
+                if suffix == 0x20 && server == nil { server = name }
+            }
+            cursor += 18
+        }
+        return workstation ?? server
+    }
+
+    /// WS-Discovery Probe over unicast UDP 3702 (Windows PC / printer / ONVIF cam).
+    private func wsDiscoveryName(host: String) -> String? {
+        let probe = """
+        <?xml version="1.0" encoding="utf-8"?>\
+        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" \
+        xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" \
+        xmlns:wsd="http://schemas.xmlsoap.org/ws/2005/04/discovery">\
+        <soap:Header><wsa:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</wsa:To>\
+        <wsa:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Probe</wsa:Action>\
+        <wsa:MessageID>urn:uuid:\(UUID().uuidString)</wsa:MessageID>\
+        </soap:Header><soap:Body><wsd:Probe/></soap:Body></soap:Envelope>
+        """
+        guard let payload = probe.data(using: .utf8),
+              let resp = udpQuery(host: host, port: 3702, payload: payload, timeout: 0.8),
+              let text = String(data: resp, encoding: .utf8),
+              text.contains("ProbeMatches") else { return nil }
+        if text.range(of: "NetworkVideoTransmitter", options: .caseInsensitive) != nil {
+            if let m = text.range(of: "onvif://www.onvif.org/name/([^\\s</]+)",
+                                  options: [.regularExpression, .caseInsensitive]) {
+                var model = String(text[m])
+                if let slash = model.lastIndex(of: "/") {
+                    model = String(model[model.index(after: slash)...])
+                }
+                if !model.isEmpty { return "ONVIF Kamera (\(model))" }
+            }
+            return "ONVIF Kamera"
+        }
+        if text.range(of: "PrintDeviceType|PrintServiceType", options: [.regularExpression, .caseInsensitive]) != nil {
+            return "WS Yazıcı"
+        }
+        if text.range(of: "Computer", options: .caseInsensitive) != nil {
+            return "Windows PC"
+        }
+        return "WS-Discovery cihazı"
     }
 
     private func tryTcp(host: String, port: UInt16, timeout: TimeInterval) -> Bool {

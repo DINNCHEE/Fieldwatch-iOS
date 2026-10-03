@@ -79,8 +79,7 @@ public final class BleScanner: NSObject, CBCentralManagerDelegate, @unchecked Se
     }
     
     // MARK: - CBCentralManagerDelegate
-    public func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        DispatchQueue.main.async {
+    public func centralManagerDidUpdateState(_ central: CBCentralManager) {        DispatchQueue.main.async {
             self.delegate?.bleScannerStateChanged(isScanning: self.isScanning, state: central.state)
         }
         if central.state == .poweredOn && isScanning {
@@ -186,5 +185,156 @@ public final class BleScanner: NSObject, CBCentralManagerDelegate, @unchecked Se
         )
         
         delegate?.bleScannerDidObserve(observation)
+    }
+
+    // GATT pending-connection storage (extension delegates use it).
+    fileprivate static var gattLock = NSLock()
+    fileprivate static var gattPending: GattPending?
+}
+
+// MARK: - On-demand GATT read (Device Information 0x180A + service list)
+
+public struct GattInfo: Sendable {
+    public var services: [String] = []
+    public var manufacturer: String?
+    public var model: String?
+    public var serial: String?
+    public var firmware: String?
+    public var hardware: String?
+}
+
+extension BleScanner: CBPeripheralDelegate {
+    struct GattPending {
+        let peripheral: CBPeripheral
+        let completion: (GattInfo?) -> Void
+        var services: [String] = []
+        var pendingReads: Int = 0
+        var finished: Bool = false
+        var info = GattInfo()
+    }
+
+    private static func takePending() -> GattPending? {
+        gattLock.lock(); defer { gattLock.unlock() }
+        let p = gattPending; gattPending = nil; return p
+    }
+
+    private static func setPending(_ p: GattPending?) {
+        gattLock.lock(); defer { gattLock.unlock() }
+        gattPending = p
+    }
+
+    /// Connect, read Device Information + service list, disconnect. User-initiated only.
+    public func readGatt(id: String, timeout: TimeInterval = 12,
+                         completion: @escaping (GattInfo?) -> Void) {
+        queue.async {
+            guard let uuid = UUID(uuidString: id) else {
+                DispatchQueue.main.async { completion(nil) }; return
+            }
+            let known = self.centralManager.retrievePeripherals(withIdentifiers: [uuid])
+            guard let peripheral = known.first else {
+                DispatchQueue.main.async { completion(nil) }; return
+            }
+            Self.setPending(GattPending(peripheral: peripheral, completion: completion))
+            peripheral.delegate = self
+            self.centralManager.connect(peripheral, options: nil)
+            self.queue.asyncAfter(deadline: .now() + timeout) { [weak self] in
+                guard let self = self else { return }
+                if let p = Self.takePending() {
+                    self.centralManager.cancelPeripheralConnection(p.peripheral)
+                    let info = p.info
+                    DispatchQueue.main.async { completion(info.services.isEmpty ? nil : info) }
+                }
+            }
+        }
+    }
+
+    private func finishGatt(_ info: GattInfo, peripheral: CBPeripheral) {
+        centralManager.cancelPeripheralConnection(peripheral)
+        if var p = Self.takePending() {
+            p.info = info
+            let out = p.info
+            DispatchQueue.main.async { p.completion(out.services.isEmpty ? nil : out) }
+        }
+    }
+
+    public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        peripheral.discoverServices(nil)
+    }
+
+    public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        if let p = Self.takePending() {
+            let completion = p.completion
+            DispatchQueue.main.async { completion(nil) }
+        }
+    }
+
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        guard error == nil, let services = peripheral.services else {
+            if var p = Self.takePending() {
+                Self.setPending(GattPending(peripheral: p.peripheral, completion: p.completion,
+                                            services: p.services, pendingReads: 0,
+                                            finished: false, info: p.info))
+            }
+            return
+        }
+        var pending = Self.takePending()
+        for service in services {
+            pending?.services.append(service.uuid.uuidString)
+            peripheral.discoverCharacteristics(nil, for: service)
+            pending?.pendingReads += 1
+        }
+        Self.setPending(pending)
+        if services.isEmpty {
+            if let p = Self.takePending() {
+                finishGatt(p.info, peripheral: peripheral)
+            }
+        }
+    }
+
+    public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        var pending = Self.takePending()
+        pending?.pendingReads = max(0, (pending?.pendingReads ?? 1) - 1)
+        if error == nil, let chars = service.characteristics {
+            let want: Set<String> = ["2A29", "2A24", "2A25", "2A26", "2A27", "2A23"]
+            for ch in chars where service.uuid.uuidString.uppercased().contains("180A") {
+                let short = ch.uuid.uuidString.replacingOccurrences(of: "-", with: "").uppercased()
+                let key = short.count >= 8 ? String(short.dropFirst(4).prefix(4)) : short
+                if want.contains(key) {
+                    peripheral.readValue(for: ch)
+                    pending?.pendingReads += 1
+                }
+            }
+        }
+        let done = (pending?.pendingReads ?? 0) <= 0
+        Self.setPending(pending)
+        if done, let p = Self.takePending() {
+            finishGatt(p.info, peripheral: peripheral)
+        }
+    }
+
+    public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
+        var pending = Self.takePending()
+        pending?.pendingReads = max(0, (pending?.pendingReads ?? 1) - 1)
+        if error == nil,
+           let data = characteristic.value,
+           let text = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines.union(.controlCharacters)),
+           !text.isEmpty {
+            let uuid = characteristic.uuid.uuidString.replacingOccurrences(of: "-", with: "").uppercased()
+            let key = uuid.count >= 8 ? String(uuid.dropFirst(4).prefix(4)) : uuid
+            switch key {
+            case "2A29": pending?.info.manufacturer = text
+            case "2A24": pending?.info.model = text
+            case "2A25": pending?.info.serial = text
+            case "2A26": pending?.info.firmware = text
+            case "2A27": pending?.info.hardware = text
+            default: break
+            }
+        }
+        let done = (pending?.pendingReads ?? 0) <= 0
+        Self.setPending(pending)
+        if done, let p = Self.takePending() {
+            finishGatt(p.info, peripheral: peripheral)
+        }
     }
 }

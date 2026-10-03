@@ -329,7 +329,8 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
             name: ssid,
             rssi: rssi,
             location: currentLocation,
-            facts: facts
+            facts: facts,
+            channel: channel
         )
         delegate?.wifiScannerDidObserve(observation)
     }

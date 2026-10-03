@@ -217,7 +217,8 @@ public struct Observation: Identifiable, Sendable {
     public let txPower: Int?
     public let location: CLLocationCoordinate2D?
     public let facts: RadioFacts
-    
+    public let channel: Int?
+
     public init(
         timestamp: Date = Date(),
         kind: RadioKind,
@@ -226,7 +227,8 @@ public struct Observation: Identifiable, Sendable {
         rssi: Int,
         txPower: Int? = nil,
         location: CLLocationCoordinate2D? = nil,
-        facts: RadioFacts = RadioFacts()
+        facts: RadioFacts = RadioFacts(),
+        channel: Int? = nil
     ) {
         self.timestamp = timestamp
         self.kind = kind
@@ -236,6 +238,7 @@ public struct Observation: Identifiable, Sendable {
         self.txPower = txPower
         self.location = location
         self.facts = facts
+        self.channel = channel
     }
 }
 
@@ -264,6 +267,7 @@ public struct Sighting: Identifiable, Sendable {
     public var isBookmarked: Bool
     public var fastPairPairing: Bool
     public var rssiSamples: [RssiSample]
+    public var channel: Int?
     
     public init(
         identifier: String,
@@ -288,7 +292,8 @@ public struct Sighting: Identifiable, Sendable {
         isCoTraveling: Bool = false,
         isBookmarked: Bool = false,
         fastPairPairing: Bool = false,
-        rssiSamples: [RssiSample] = []
+        rssiSamples: [RssiSample] = [],
+        channel: Int? = nil
     ) {
         self.identifier = identifier
         self.kind = kind
@@ -313,6 +318,7 @@ public struct Sighting: Identifiable, Sendable {
         self.isBookmarked = isBookmarked
         self.fastPairPairing = fastPairPairing
         self.rssiSamples = rssiSamples
+        self.channel = channel
     }
 }
 
