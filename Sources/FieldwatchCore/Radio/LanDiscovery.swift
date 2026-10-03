@@ -326,7 +326,7 @@ extension LanDiscovery {
         var mask: UInt32 = 0
         var cursor: UnsafeMutablePointer<ifaddrs>? = first
         while let c = cursor {
-            letifa = c.pointee
+            let ifa = c.pointee
             if String(cString: ifa.ifa_name) == "en0",
                ifa.ifa_addr.pointee.sa_family == sa_family_t(AF_INET),
                ifa.ifa_netmask.pointee.sa_family == sa_family_t(AF_INET) {
