@@ -103,7 +103,7 @@ public struct DeviceExplain: Sendable {
         }
         s = s.trimmingCharacters(in: .whitespaces)
         if s.isEmpty { return headline }
-        return s.prefix(1).uppercased() + s.dropFirst()
+        return s.prefix(1).uppercased() + String(s.dropFirst())
     }
 
     public static func rssiBand(rssi: Int) -> String {

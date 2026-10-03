@@ -10,7 +10,8 @@ public struct FastPairModels: Sendable {
         table[modelId & 0xFFFFFF]
     }
 
-    private static let table: [Int: String] = [        0x000006: "Google Pixel Buds",
+    private static let table: [Int: String] = [
+        0x000006: "Google Pixel Buds",
         0x000007: "Android Auto",
         0x00000B: "Google Gphones",
         0x00000C: "Google Set Up Device",

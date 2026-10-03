@@ -133,7 +133,7 @@ public final class RadioDb: @unchecked Sendable {
         guard hex.count >= 6,
               let first = UInt8(hex.prefix(2), radix: 16),
               (first & 0x02) != 0, (first & 0x01) == 0 else { return nil }
-        return String(format: "%02X", first & 0xFD) + hex.dropFirst(2).prefix(4)
+        return String(format: "%02X", first & 0xFD) + String(hex.dropFirst(2).prefix(4))
     }
 
     public func normalizeMac(_ raw: String) -> String {
@@ -189,7 +189,7 @@ public final class RadioDb: @unchecked Sendable {
         guard index >= 0, index + 1 < nameOff.count else { return nil }
         let start = nameOff[index], end = nameOff[index + 1]
         guard start >= 0, end <= nameBlob.count, end >= start else { return nil }
-        return String(data: nameBlob[start..<end], encoding: .utf8)
+        return String(data: nameBlob.subdata(in: start..<end), encoding: .utf8)
     }
 
     private func isPhoneHouseVendor(_ vendor: String) -> Bool {
@@ -217,7 +217,7 @@ public final class RadioDb: @unchecked Sendable {
             for i in 0..<8 { v |= UInt64(data[off + i]) << (8 * i) }
             off += 8; return v
         }
-        mutating func bytes(_ n: Int) -> Data { defer { off += n }; return data[off..<(off + n)] }
+        mutating func bytes(_ n: Int) -> Data { defer { off += n }; return data.subdata(in: off..<(off + n)) }
     }
 
     private func parse(_ bytes: Data) -> Bool {
