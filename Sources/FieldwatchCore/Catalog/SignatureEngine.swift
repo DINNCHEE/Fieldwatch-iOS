@@ -16,6 +16,7 @@ public final class SignatureEngine: @unchecked Sendable {
     private let lock = NSLock()
     
     public init() {
+        RadioDb.shared.load()
         loadDefaultCatalog()
     }
     

@@ -24,6 +24,7 @@
 		B10000000000000000000015 /* FleetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* FleetsView.swift */; };
 		B10000000000000000000016 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* SettingsView.swift */; };
 		B10000000000000000000019 /* VendorLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000022 /* VendorLookup.swift */; };
+		B10000000000000000000020 /* RadioDb.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000023 /* RadioDb.swift */; };
 		B10000000000000000000017 /* fieldwatch-signatures-v2.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* fieldwatch-signatures-v2.json */; };
 		B10000000000000000000018 /* radiodb.bin in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* radiodb.bin */; };
 /* End PBXBuildFile section */
@@ -46,6 +47,7 @@
 		A10000000000000000000015 /* FleetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/FleetsView.swift"; sourceTree = "<group>"; };
 		A10000000000000000000016 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/SettingsView.swift"; sourceTree = "<group>"; };
 		A10000000000000000000022 /* VendorLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Catalog/VendorLookup.swift"; sourceTree = "<group>"; };
+		A10000000000000000000023 /* RadioDb.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Catalog/RadioDb.swift"; sourceTree = "<group>"; };
 		A10000000000000000000017 /* fieldwatch-signatures-v2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/fieldwatch-signatures-v2.json"; sourceTree = "<group>"; };
 		A10000000000000000000018 /* radiodb.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = "Resources/radiodb.bin"; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -95,6 +97,7 @@
 				A10000000000000000000015 /* FleetsView.swift */,
 				A10000000000000000000016 /* SettingsView.swift */,
 				A10000000000000000000022 /* VendorLookup.swift */,
+				A10000000000000000000023 /* RadioDb.swift */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -203,6 +206,7 @@
 				B10000000000000000000015 /* FleetsView.swift in Sources */,
 				B10000000000000000000016 /* SettingsView.swift in Sources */,
 				B10000000000000000000019 /* VendorLookup.swift in Sources */,
+				B10000000000000000000020 /* RadioDb.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

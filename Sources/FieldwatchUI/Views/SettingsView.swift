@@ -135,6 +135,12 @@ public struct SettingsView: View {
                 // About
                 Section("About Fieldwatch iOS") {
                     HStack {
+                        Text("Radio Database")
+                        Spacer()
+                        Text(RadioDb.shared.isReady ? "\(RadioDb.shared.nameCount) names" : "Not loaded")
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
                         Text("Version")
                         Spacer()
                         Text("1.0.0 (Port)")

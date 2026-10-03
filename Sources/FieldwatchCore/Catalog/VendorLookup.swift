@@ -57,7 +57,8 @@ public struct VendorLookup: Sendable {
     ]
 
     public static func companyName(for id: Int) -> String? {
-        companies[id]
+        if let db = RadioDb.shared.company(id) { return db }
+        return companies[id]
     }
 
     // MARK: - Common Wi-Fi OUIs (AA:BB:CC -> vendor)
@@ -78,7 +79,7 @@ public struct VendorLookup: Sendable {
         "00:0F:B3": "Actiontec", "00:15:05": "Actiontec",
         "00:1F:90": "Actiontec", "18:1E:78": "Actiontec",
         "C0:05:C2": "Actiontec", "E4:22:A5": "Actiontec",
-        "14:91:82": "Arcadyan", "3C:17:N/A": "Arcadyan",
+        "14:91:82": "Arcadyan",
         "5C:E0:CA": "TP-Link", "60:A4:B7": "TP-Link", "B0:95:8E": "TP-Link",
         "00:23:69": "Cisco", "00:62:EC": "Cisco", "58:AC:78": "Cisco",
         "00:01:36": "CyberTAN", "00:0E:58": "Netgear",
@@ -98,6 +99,7 @@ public struct VendorLookup: Sendable {
     ]
 
     public static func ouiVendor(for oui: String) -> String? {
+        if let db = RadioDb.shared.vendorForOui24(oui) { return db }
         let key = oui.uppercased()
         if let hit = ouis[key] { return hit }
         let compact = key.replacingOccurrences(of: ":", with: "").replacingOccurrences(of: "-", with: "")
@@ -127,6 +129,7 @@ public struct VendorLookup: Sendable {
     ]
 
     public static func serviceName(for uuid: String) -> String? {
+        if let db = RadioDb.shared.serviceUuid(uuid) { return db }
         let u = uuid.uppercased().replacingOccurrences(of: "-", with: "")
         for (short, name) in services where u.contains(short) {
             return name
