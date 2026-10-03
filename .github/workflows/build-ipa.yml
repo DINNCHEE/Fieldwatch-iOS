@@ -60,6 +60,22 @@ jobs:
           ls -lh dist/Fieldwatch.ipa
           unzip -l dist/Fieldwatch.ipa
 
+          # dSYM for crash symbolication
+          DSYM_PATH="build/Fieldwatch.xcarchive/dSYMs/Fieldwatch.app.dSYM"
+          if [ -d "$DSYM_PATH" ]; then
+            ROOT="$(pwd)"
+            rm -f dist/Fieldwatch.app.dSYM.zip
+            (cd build/Fieldwatch.xcarchive/dSYMs && zip -r9 "$ROOT/dist/Fieldwatch.app.dSYM.zip" Fieldwatch.app.dSYM)
+            ls -lh dist/Fieldwatch.app.dSYM.zip
+          fi
+
+      - name: Upload dSYM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fieldwatch-dSYM
+          path: dist/Fieldwatch.app.dSYM.zip
+          retention-days: 90
+
       - name: Upload Fieldwatch.ipa Artifact
         uses: actions/upload-artifact@v4
         with:

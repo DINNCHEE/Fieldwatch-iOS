@@ -188,7 +188,7 @@ public final class RadioDb: @unchecked Sendable {
     private func nameAt(_ index: Int) -> String? {
         guard index >= 0, index + 1 < nameOff.count else { return nil }
         let start = nameOff[index], end = nameOff[index + 1]
-        guard start >= 0, end <= nameBlob.count, end >= start else { return nil }
+        guard start >= 0, start <= end, end <= nameBlob.count else { return nil }
         return String(data: nameBlob.subdata(in: start..<end), encoding: .utf8)
     }
 
@@ -205,6 +205,12 @@ public final class RadioDb: @unchecked Sendable {
         /// Bytes left from current position. Every section checks this
         /// before looping so a corrupt file returns false, never traps.
         func require(_ n: Int) -> Bool { n >= 0 && off + n <= data.count }
+        /// Trapping subdata() is banned here: out-of-range returns nil.
+        func safeSlice(_ range: Range<Int>) -> Data? {
+            guard range.lowerBound >= 0, range.lowerBound <= range.upperBound,
+                  range.upperBound <= data.count else { return nil }
+            return data.subdata(in: range)
+        }
         mutating func u8() -> UInt8 { defer { off += 1 }; return data[off] }
         mutating func u16() -> UInt16 {
             let v = UInt16(data[off]) | (UInt16(data[off + 1]) << 8); off += 2; return v
@@ -220,23 +226,28 @@ public final class RadioDb: @unchecked Sendable {
             for i in 0..<8 { v |= UInt64(data[off + i]) << (8 * i) }
             off += 8; return v
         }
-        mutating func bytes(_ n: Int) -> Data { defer { off += n }; return data.subdata(in: off..<(off + n)) }
+        mutating func bytes(_ n: Int) -> Data? {
+            guard n >= 0, off + n <= data.count else { return nil }
+            defer { off += n }
+            return data.subdata(in: off..<(off + n))
+        }
     }
 
     private func parse(_ bytes: Data) -> Bool {
         guard bytes.count > 16 else { return false }
         var c = Cursor(data: bytes)
-        let magic = c.bytes(4)
+        guard let magic = c.bytes(4) else { return false }
         guard magic == Data([0x53, 0x50, 0x4C, 0x4B]) else { return false } // "SPLK"
         let version = c.u16()
         _ = c.u16()
         guard version == 1 else { return false }
         builtYmd = Int(c.i32())
         let nsec = Int(c.i32())
-        guard nsec > 0, nsec < 64 else { return false }
+        guard nsec > 0, nsec < 64, c.require(nsec * 8) else { return false }
         var sections: [String: Int] = [:]
         for _ in 0..<nsec {
-            let tag = String(data: c.bytes(4), encoding: .ascii)?.trimmingCharacters(in: .controlCharacters) ?? ""
+            guard let tagData = c.bytes(4) else { return false }
+            let tag = String(data: tagData, encoding: .ascii)?.trimmingCharacters(in: .controlCharacters) ?? ""
             sections[tag] = Int(c.i32())
         }
         func slice(_ tag: String) -> Cursor? {
@@ -282,8 +293,8 @@ public final class RadioDb: @unchecked Sendable {
         nameOff = []
         for _ in 0...n { nameOff.append(Int(f.i32())) }
         guard let nstrAt = sections["nstr"], let last = nameOff.last,
-              nstrAt >= 0, nstrAt + last <= bytes.count else { return false }
-        nameBlob = bytes[nstrAt..<(nstrAt + last)]
+              nstrAt >= 0, last >= 0, nstrAt + last <= bytes.count else { return false }
+        nameBlob = bytes.subdata(in: nstrAt..<(nstrAt + last))
         return true
     }
 }

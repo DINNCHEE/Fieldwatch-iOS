@@ -586,7 +586,7 @@ public struct AdvPayloadDecoder: Sendable {
         switch msgType {
         case 0x00: // Basic ID
             fields.append(DecodedField(label: "RemoteID Msg", value: "Basic ID"))
-            if data.count >= 21 {
+            if data.count >= 22 {
                 let idType = data[1] & 0x0F
                 let uasId = String(data: data.subdata(in: 2..<22), encoding: .ascii) ?? "Unknown"
                 fields.append(DecodedField(label: "UAS ID Type", value: "\(idType)"))
