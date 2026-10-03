@@ -17,9 +17,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.5</string>
+    <string>1.0.6</string>
     <key>CFBundleVersion</key>
-    <string>5</string>
+    <string>6</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>UIDeviceFamily</key>
@@ -70,6 +70,11 @@
     </dict>
     <key>NSLocalNetworkUsageDescription</key>
     <string>Fieldwatch uses the local network to broadcast Cursor-on-Target (CoT) tactical situational awareness packets to ATAK/iTAK/WinTAK devices.</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
     <key>NSBonjourServices</key>
     <array>
         <string>_hap._tcp</string>

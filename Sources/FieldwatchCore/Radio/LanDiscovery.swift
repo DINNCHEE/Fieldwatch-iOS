@@ -373,6 +373,9 @@ extension LanDiscovery {
         (1400, "Sonos speaker"),
         (9100, "Printer (JetDirect)"),
         (631, "Printer (IPP)"),
+        (554, "Kamera (RTSP)"),
+        (8554, "Kamera (RTSP alt)"),
+        (8000, "ONVIF / Kamera"),
         (80, "Web device"),
         (443, "Web device (TLS)"),
         (22, "SSH device"),
@@ -406,6 +409,7 @@ extension LanDiscovery {
         case 8009: return "Chromecast"
         case 1400: return "Sonos"
         case 9100, 631: return "Yazıcı"
+        case 554, 8554, 8000: return "Kamera"
         case 80, 443: return "Web"
         case 22: return "SSH"
         default: return "Ağ"

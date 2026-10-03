@@ -82,6 +82,18 @@ public struct MainContentView: View {
                     Label("Sınıflar", systemImage: "square.grid.2x2")
                 }
 
+            // Cameras Tab
+            CameraView(viewModel: viewModel)
+                .tabItem {
+                    Label("Kameralar", systemImage: "video.fill")
+                }
+
+            // Sweep Tab
+            SweepView(viewModel: viewModel)
+                .tabItem {
+                    Label("Süpürme", systemImage: "magnifyingglass")
+                }
+
             // Reports Tab
             ReportsView(viewModel: viewModel)
                 .tabItem {
