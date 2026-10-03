@@ -160,6 +160,7 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
         
         // Decoded fields & role hints
         sighting.roleHints = AdvPayloadDecoder.roleHints(for: sighting)
+        sighting.fastPairPairing = FastPair.pairingAdvertised(serviceData: sighting.facts.serviceDataRecords)
         var decoded: [DecodedField] = []
         for mfg in sighting.facts.mfgRecords {
             decoded.append(contentsOf: AdvPayloadDecoder.decodeManufacturer(record: mfg))

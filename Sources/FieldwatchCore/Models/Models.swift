@@ -259,6 +259,7 @@ public struct Sighting: Identifiable, Sendable {
     public var decodedFields: [DecodedField]
     public var isCoTraveling: Bool // "Moving with you"
     public var isBookmarked: Bool
+    public var fastPairPairing: Bool
     
     public init(
         identifier: String,
@@ -281,7 +282,8 @@ public struct Sighting: Identifiable, Sendable {
         roleHints: [RoleHint] = [],
         decodedFields: [DecodedField] = [],
         isCoTraveling: Bool = false,
-        isBookmarked: Bool = false
+        isBookmarked: Bool = false,
+        fastPairPairing: Bool = false
     ) {
         self.identifier = identifier
         self.kind = kind
@@ -304,6 +306,7 @@ public struct Sighting: Identifiable, Sendable {
         self.decodedFields = decodedFields
         self.isCoTraveling = isCoTraveling
         self.isBookmarked = isBookmarked
+        self.fastPairPairing = fastPairPairing
     }
 }
 

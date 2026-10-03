@@ -84,9 +84,15 @@ public struct AdvPayloadDecoder: Sendable {
             }
         }
         
-        // 2. Check Fast Pair
-        for rec in sighting.facts.serviceDataRecords where rec.uuid.uppercased().contains("FE2C") {
-            hints.append(RoleHint(bucket: "finder", label: "Google Fast Pair", reason: "Android proximity pairing / Find My Device", weight: 8))
+        // 2. Check Fast Pair (pairing vs account key)
+        for rec in sighting.facts.serviceDataRecords where FastPair.isFastPairUuid(rec.uuid) {
+            let hexCount = rec.dataHex.filter { $0.isLetter || $0.isNumber }.count
+            if hexCount == 6 {
+                let name = FastPair.modelName(dataHex: rec.dataHex) ?? "Unknown model"
+                hints.append(RoleHint(bucket: "finder", label: "Google Fast Pair pairing: \(name)", reason: "3-byte Fast Pair pairing advertisement", weight: 8))
+            } else {
+                hints.append(RoleHint(bucket: "finder", label: "Google Fast Pair (paired device nearby)", reason: "Fast Pair account-key advertisement", weight: 4))
+            }
         }
         
         // 3. Check Eddystone
@@ -192,12 +198,20 @@ public struct AdvPayloadDecoder: Sendable {
     // MARK: - Fast Pair Decoder
     private static func decodeFastPair(data: Data) -> [DecodedField] {
         var fields: [DecodedField] = []
-        if data.count >= 3 {
+        if data.count == 3 {
             let modelId = String(format: "%02X%02X%02X", data[0], data[1], data[2])
-            fields.append(DecodedField(label: "Fast Pair Model ID", value: modelId))
-        }
-        if data.count > 3 {
-            fields.append(DecodedField(label: "Fast Pair Salt/Data", value: data.subdata(in: 3..<data.count).hexUpper))
+            let modelInt = (Int(data[0]) << 16) | (Int(data[1]) << 8) | Int(data[2])
+            if let name = FastPairModels.name(modelId: modelInt) {
+                fields.append(DecodedField(label: "Fast Pair Pairing", value: name))
+            } else {
+                fields.append(DecodedField(label: "Fast Pair Model ID", value: modelId))
+            }
+            fields.append(DecodedField(label: "Fast Pair Mode", value: "Pairing (tap-to-pair card)"))
+        } else {
+            fields.append(DecodedField(label: "Fast Pair Mode", value: "Account key (\(data.count) bytes, already paired)"))
+            if data.count > 0 {
+                fields.append(DecodedField(label: "Fast Pair Key Data", value: data.hexUpper))
+            }
         }
         return fields
     }
