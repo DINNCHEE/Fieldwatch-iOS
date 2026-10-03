@@ -205,7 +205,8 @@ public struct DeviceDetailView: View {
                             Text("Lokal yönetimli BSSID: sanal/misafir ağ olabilir, OUI üretici bilgisi gerçek olmayabilir.")
                                 .font(.caption)
                                 .foregroundColor(.orange)
-                        }                        Button {
+                        }
+                        Button {
                             UIPasteboard.general.string = "\(sighting.displayName)\n\(sighting.identifier)"
                             copied = true
                         } label: {
