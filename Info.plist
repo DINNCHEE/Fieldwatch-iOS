@@ -17,9 +17,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.6</string>
+    <string>1.0.7</string>
     <key>CFBundleVersion</key>
-    <string>6</string>
+    <string>7</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>UIDeviceFamily</key>
@@ -96,6 +96,11 @@
         <string>_daap._tcp</string>
         <string>_touch-remote._tcp</string>
         <string>_sleep-proxy._udp</string>
+        <string>_matter._tcp</string>
+        <string>_matterc._udp</string>
+        <string>_matterd._udp</string>
+        <string>_meshcop._udp</string>
+        <string>_services._dns-sd._udp</string>
     </array>
 </dict>
 </plist>

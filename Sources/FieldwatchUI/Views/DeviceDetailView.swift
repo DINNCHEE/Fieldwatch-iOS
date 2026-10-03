@@ -8,9 +8,77 @@
 
 import SwiftUI
 import UIKit
+import PhotosUI
 #if SWIFT_PACKAGE
 import FieldwatchCore
 #endif
+
+public struct PhotoPicker: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+    var onPick: (UIImage) -> Void
+
+    public func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.filter = .images
+        config.selectionLimit = 1
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    public func updateUIViewController(_ vc: PHPickerViewController, context: Context) {}
+
+    public func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    public class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: PhotoPicker
+        init(parent: PhotoPicker) { self.parent = parent }
+
+        public func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            parent.isPresented = false
+            guard let item = results.first else { return }
+            if item.itemProvider.canLoadObject(ofClass: UIImage.self) {
+                item.itemProvider.loadObject(ofClass: UIImage.self) { image, _ in
+                    if let image = image as? UIImage {
+                        DispatchQueue.main.async {
+                            self.parent.onPick(image)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+public struct EvidenceStore {
+    public static func dir(id: String) -> URL {
+        let safe = id.replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: ":", with: "_")
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("evidence", isDirectory: true)
+            .appendingPathComponent(safe, isDirectory: true)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        return url
+    }
+
+    public static func save(id: String, image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        let url = dir(id: id).appendingPathComponent("\(UUID().uuidString).jpg")
+        try? data.write(to: url, options: .atomic)
+    }
+
+    public static func load(id: String) -> [UIImage] {
+        let dirURL = dir(id: id)
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: dirURL, includingPropertiesForKeys: nil) else { return [] }
+        return files.filter { $0.pathExtension.lowercased() == "jpg" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+            .compactMap { try? Data(contentsOf: $0) }
+            .compactMap { UIImage(data: $0) }
+    }
+}
 
 public struct DeviceDetailView: View {
     let sighting: Sighting
@@ -29,6 +97,8 @@ public struct DeviceDetailView: View {
     @State private var gattInfo: GattInfo?
     @State private var gattLoading: Bool = false
     @State private var gattFailed: Bool = false
+    @State private var evidenceImages: [UIImage] = []
+    @State private var showingPicker: Bool = false
     
     public init(sighting: Sighting, viewModel: FieldwatchViewModel) {
         self.sighting = sighting
@@ -171,6 +241,35 @@ public struct DeviceDetailView: View {
                     }
                 }
 
+                // Evidence photos
+                Section("Kanıt Fotoğrafları (\(evidenceImages.count))") {
+                    if !evidenceImages.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(evidenceImages.indices, id: \.self) { idx in
+                                    Image(uiImage: evidenceImages[idx])
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 100, height: 100)
+                                        .clipped()
+                                        .cornerRadius(8)
+                                }
+                            }
+                        }
+                        .frame(height: 110)
+                    }
+                    Button("Fotoğraf Ekle") { showingPicker = true }
+                }
+                .sheet(isPresented: $showingPicker) {
+                    PhotoPicker(isPresented: $showingPicker) { image in
+                        EvidenceStore.save(id: sighting.identifier, image: image)
+                        evidenceImages = EvidenceStore.load(id: sighting.identifier)
+                    }
+                }
+                .onAppear {
+                    evidenceImages = EvidenceStore.load(id: sighting.identifier)
+                }
+
                 // Hunt & Locate action
                 Section {
                     Button {
@@ -198,7 +297,7 @@ public struct DeviceDetailView: View {
                             HStack {
                                 Text("Kanal")
                                 Spacer()
-                                Text("\(ch)").font(.caption.monospaced())
+                                Text(Self.bandText(channel: ch)).font(.caption.monospaced())
                             }
                         }
                         if RadioDb.shared.isRandomized(sighting.identifier) {
@@ -347,6 +446,18 @@ public struct DeviceDetailView: View {
                         Text("\(sighting.count)")
                             .font(.system(.body, design: .monospaced))
                     }
+                    let recentSamples = sighting.rssiSamples.filter {
+                        Date().timeIntervalSince($0.at) < 60
+                    }
+                    if !recentSamples.isEmpty {
+                        HStack {
+                            Text("Yayın hızı")
+                            Spacer()
+                            Text("\(recentSamples.count)/dk\(recentSamples.count > 30 ? " (yoğun!)" : "")")
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundColor(recentSamples.count > 30 ? .red : .primary)
+                        }
+                    }
                     HStack {
                         Text("First Seen")
                         Spacer()
@@ -405,6 +516,12 @@ public struct DeviceDetailView: View {
                 HuntView(sighting: sighting, viewModel: viewModel)
             }
         }
+    }
+
+    private static func bandText(channel ch: Int) -> String {
+        if ch == 14 { return "14 · 2.4 GHz (2484 MHz)" }
+        if (1...13).contains(ch) { return "\(ch) · 2.4 GHz (\(2412 + (ch - 1) * 5) MHz)" }
+        return "\(ch) · 5/6 GHz (~\(5000 + ch * 5) MHz)"
     }
 
     private func saveCustom() {

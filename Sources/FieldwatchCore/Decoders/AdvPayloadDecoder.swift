@@ -177,6 +177,22 @@ public struct AdvPayloadDecoder: Sendable {
             }
         }
 
+        // 3. Setup-mode cameras + OBD dongles by advertised name
+        let lname = (sighting.name ?? "").lowercased()
+        if !lname.isEmpty {
+            let setupCamPrefixes = ["mv_", "mv+", "xmeye_ap", "cam_", "dog-", "360_", "tp-link_"]
+            if setupCamPrefixes.contains(where: { lname.hasPrefix($0) }) {
+                hints.append(RoleHint(bucket: "camera", label: "kurulum modunda kamera (açık hotspot)", reason: "Setup SSID kalıbı; kameranın kurulum ağı açık.", weight: 7))
+            }
+            let obdKeys = ["v-link", "vlink", "ios-vlink", "dszm", "obdii", "obd2wifi", "elm327", "viecar", "torque"]
+            if obdKeys.contains(where: { lname.contains($0) }) {
+                hints.append(RoleHint(bucket: "vehicle", label: "OBD-II dongle", reason: "Araç arıza/diagnostic adaptörü yayını.", weight: 7))
+            }
+            if lname.contains("flipper") {
+                hints.append(RoleHint(bucket: "hacking", label: "Flipper Zero", reason: "Pen-test çoklu aracı.", weight: 8))
+            }
+        }
+
         return hints
     }
 

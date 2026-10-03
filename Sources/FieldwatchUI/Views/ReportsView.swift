@@ -32,6 +32,21 @@ public struct ReportsView: View {
         self.viewModel = viewModel
     }
 
+    private func hourBuckets() -> [Int] {
+        var buckets = [Int](repeating: 0, count: 24)
+        let now = Date()
+        let calendar = Calendar.current
+        let nowHour = calendar.component(.hour, from: now)
+        for s in viewModel.sightings.values {
+            let age = now.timeIntervalSince(s.firstSeen)
+            guard age >= 0, age < 24 * 3600 else { continue }
+            let h = calendar.component(.hour, from: s.firstSeen)
+            let idx = (h - nowHour + 23 + 48) % 24
+            buckets[idx] += 1
+        }
+        return buckets
+    }
+
     public var body: some View {
         NavigationView {
             List {
@@ -54,6 +69,30 @@ public struct ReportsView: View {
                             .font(.caption)
                             .foregroundColor(.red)
                     }
+                }
+
+                Section("24 Saat Zaman Çizelgesi (ilk görülme)") {
+                    let buckets = hourBuckets()
+                    let peak = max(1, buckets.max() ?? 1)
+                    HStack(alignment: .bottom, spacing: 2) {
+                        ForEach(0..<24, id: \.self) { h in
+                            VStack(spacing: 2) {
+                                Spacer(minLength: 0)
+                                Rectangle()
+                                    .fill(buckets[h] > 0 ? Color.green : Color.gray.opacity(0.3))
+                                    .frame(height: max(2, CGFloat(buckets[h]) / CGFloat(peak) * 64))
+                                if h % 6 == 0 {
+                                    Text("\(h)")
+                                        .font(.system(size: 7, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                    }
+                    .frame(height: 92)
+                    Text("Son 24 saatte ilk kez görülen cihaz sayısı.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
 
                 Section("Oturumlar (\(sits.count))") {

@@ -26,6 +26,7 @@ public final class LanDiscovery: NSObject, @unchecked Sendable {
     private var browsers: [NetServiceBrowser] = []
     private var pendingResolve: Set<NetService> = []
     private var seenServices: Set<String> = []
+    private var startedTypes: Set<String> = []
 
     // SSDP
     private var ssdpListener: NWListener?
@@ -47,6 +48,8 @@ public final class LanDiscovery: NSObject, @unchecked Sendable {
         "_googlecast._tcp.", "_spotify-connect._tcp.",
         "_sonos._tcp.", "_daap._tcp.", "_touch-remote._tcp.",
         "_sleep-proxy._udp.",
+        "_matter._tcp.", "_matterc._udp.", "_matterd._udp.",
+        "_meshcop._udp.", "_services._dns-sd._udp.",
     ]
 
     private override init() { super.init() }
@@ -93,12 +96,20 @@ public final class LanDiscovery: NSObject, @unchecked Sendable {
 
     private func startBrowsers() {
         stopBrowsers()
+        startedTypes.removeAll()
         for type in Self.bonjourTypes {
-            let b = NetServiceBrowser()
-            b.delegate = self
-            browsers.append(b)
-            b.searchForServices(ofType: type, inDomain: "local.")
+            ensureBrowser(type: type)
         }
+    }
+
+    /// Meta-browse (_services._dns-sd._udp) discovers new types at runtime;
+    /// this starts a browser for them so discovery extends itself.
+    private func ensureBrowser(type: String) {
+        guard startedTypes.insert(type).inserted else { return }
+        let b = NetServiceBrowser()
+        b.delegate = self
+        browsers.append(b)
+        b.searchForServices(ofType: type, inDomain: "local.")
     }
 
     private func stopBrowsers() {
@@ -145,6 +156,9 @@ public final class LanDiscovery: NSObject, @unchecked Sendable {
         case "_sonos._tcp.": return "Sonos"
         case "_daap._tcp.", "_touch-remote._tcp.": return "Media"
         case "_sleep-proxy._udp.": return "Sleep proxy"
+        case "_matter._tcp.", "_matterc._udp.", "_matterd._udp.": return "Matter"
+        case "_meshcop._udp.": return "Thread"
+        case "_services._dns-sd._udp.": return "Servis listesi"
         default: return "LAN"
         }
     }
@@ -175,6 +189,16 @@ public final class LanDiscovery: NSObject, @unchecked Sendable {
 // MARK: - NetService delegates (main thread)
 extension LanDiscovery: NetServiceBrowserDelegate, NetServiceDelegate {
     public func netServiceBrowser(_ browser: NetServiceBrowser, didFind service: NetService, moreComing: Bool) {
+        // Meta-browse result: the "name" is a service type — browse it too.
+        if service.type == "_services._dns-sd._udp." {
+            var t = service.name
+            if !t.hasSuffix(".") { t += "." }
+            let discovered = t
+            queue.async { [weak self] in
+                DispatchQueue.main.async { self?.ensureBrowser(type: discovered) }
+            }
+            return
+        }
         service.delegate = self
         pendingResolve.insert(service)
         service.resolve(withTimeout: 4.0)

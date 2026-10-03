@@ -242,7 +242,7 @@ public struct SettingsView: View {
                     HStack {
                         Text("Version")
                         Spacer()
-                        Text("1.0.6 (Port)")
+                        Text("1.0.7 (Port)")
                             .foregroundColor(.secondary)
                     }
                     HStack {

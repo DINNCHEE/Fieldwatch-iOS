@@ -69,6 +69,27 @@ public struct LiveListView: View {
                             
                             // Badges row
                             HStack(spacing: 6) {
+                                if Date().timeIntervalSince(sighting.firstSeen) < 60 {
+                                    Text("YENİ")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.green.opacity(0.2))
+                                        .foregroundColor(.green)
+                                        .cornerRadius(4)
+                                }
+
+                                if let weakest = sighting.rssiHistory.min(),
+                                   sighting.lastRssi - weakest > 12 {
+                                    Text("▲ yaklaşıyor")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.orange.opacity(0.2))
+                                        .foregroundColor(.orange)
+                                        .cornerRadius(4)
+                                }
+
                                 if sighting.isCoTraveling {
                                     Label("MOVING WITH YOU", systemImage: "exclamationmark.triangle.fill")
                                         .font(.system(size: 9, weight: .bold))
