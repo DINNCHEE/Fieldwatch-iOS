@@ -22,13 +22,15 @@ public final class BleScanner: NSObject, CBCentralManagerDelegate, @unchecked Se
     public weak var delegate: BleScannerDelegate?
     
     private(set) public var isScanning = false
+    private var wantsScan = false
     private let queue = DispatchQueue(label: "app.fieldwatch.ble.scanner", qos: .userInitiated)
     private var currentLocation: CLLocationCoordinate2D?
-    
+
     public override init() {
         super.init()
         self.centralManager = CBCentralManager(delegate: self, queue: queue, options: [
-            CBCentralManagerOptionShowPowerAlertKey: true
+            CBCentralManagerOptionShowPowerAlertKey: true,
+            CBCentralManagerOptionRestoreIdentifierKey: "app.fieldwatch.ble"
         ])
     }
     
@@ -40,11 +42,12 @@ public final class BleScanner: NSObject, CBCentralManagerDelegate, @unchecked Se
     
     public func startScanning(intensity: ScanIntensity = .performance) {
         queue.async {
+            self.wantsScan = true
             guard self.centralManager.state == .poweredOn else {
                 print("BleScanner: Bluetooth not powered on (state: \(self.centralManager.state.rawValue))")
                 return
             }
-            
+
             guard !self.isScanning else { return }
             
             // AllowDuplicates is essential for real-time radar sweep and RSSI tracking
@@ -54,6 +57,7 @@ public final class BleScanner: NSObject, CBCentralManagerDelegate, @unchecked Se
             
             self.centralManager.scanForPeripherals(withServices: nil, options: options)
             self.isScanning = true
+            self.harvestSystemConnected()
             DispatchQueue.main.async {
                 self.delegate?.bleScannerStateChanged(isScanning: true, state: self.centralManager.state)
             }
@@ -63,6 +67,7 @@ public final class BleScanner: NSObject, CBCentralManagerDelegate, @unchecked Se
     
     public func stopScanning() {
         queue.async {
+            self.wantsScan = false
             guard self.isScanning else { return }
             self.centralManager.stopScan()
             self.isScanning = false
@@ -80,6 +85,50 @@ public final class BleScanner: NSObject, CBCentralManagerDelegate, @unchecked Se
         }
         if central.state == .poweredOn && isScanning {
             startScanning()
+        }
+    }
+
+    public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
+        // Relaunched in background: resume the air watch if the user left it on.
+        if wantsScan && central.state == .poweredOn {
+            queue.async { [weak self] in
+                guard let self = self, !self.isScanning else { return }
+                self.centralManager.scanForPeripherals(withServices: nil, options: [
+                    CBCentralManagerScanOptionAllowDuplicatesKey: true
+                ])
+                self.isScanning = true
+                self.harvestSystemConnected()
+            }
+        }
+    }
+
+    /// System-paired/connected accessories (AirPods, watches, speakers…).
+    /// iOS hides their advertisements from us, but tells us they exist —
+    /// with their real names. No connection is opened.
+    private func harvestSystemConnected() {
+        let serviceStrings = [
+            "1800", "1801", "180A", "180D", "180F", "1812", "181A",
+            "1802", "1803", "1805", "1826", "181C", "1808", "1811",
+            "1822", "183E", "181D", "180E", "1810", "181B",
+        ]
+        var seen = Set<String>()
+        for uuid in serviceStrings.map({ CBUUID(string: $0) }) {
+            for peripheral in centralManager.retrieveConnectedPeripherals(withServices: [uuid]) {
+                let id = peripheral.identifier.uuidString
+                guard seen.insert(id).inserted else { continue }
+                let observation = Observation(
+                    timestamp: Date(),
+                    kind: .ble,
+                    identifier: id,
+                    name: peripheral.name,
+                    rssi: -60,
+                    location: currentLocation,
+                    facts: RadioFacts(
+                        serviceUuids: [uuid.uuidString]
+                    )
+                )
+                delegate?.bleScannerDidObserve(observation)
+            }
         }
     }
     

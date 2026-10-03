@@ -49,15 +49,22 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
     }
     
     private func detectAvailableMode() {
-        // Test if MobileWiFi.framework is loadable (TrollStore / Jailbreak / Debug build)
-        if let handle = dlopen("/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi", RTLD_LAZY) {
-            mobileWiFiHandle = handle
-            activeMode = .privateMobileWiFi
-            print("WifiScanner: MobileWiFi.framework loaded. Full passive 802.11 scanning enabled!")
-        } else {
-            activeMode = .publicConnectedOnly
-            print("WifiScanner: MobileWiFi not accessible. Operating in standard App Store mode.")
+        // Test if private Wi-Fi frameworks are loadable (TrollStore / Jailbreak).
+        // MobileWiFi.framework is the classic path; WiFiKit.framework exists on newer iOS.
+        let candidates = [
+            "/System/Library/PrivateFrameworks/MobileWiFi.framework/MobileWiFi",
+            "/System/Library/PrivateFrameworks/WiFiKit.framework/WiFiKit"
+        ]
+        for path in candidates {
+            if let handle = path.withCString({ dlopen($0, Int32(RTLD_LAZY)) }) {
+                mobileWiFiHandle = handle
+                activeMode = .privateMobileWiFi
+                print("WifiScanner: \(path) loaded. Full passive 802.11 scanning enabled!")
+                return
+            }
         }
+        activeMode = .publicConnectedOnly
+        print("WifiScanner: No private Wi-Fi API accessible. App Store mode + LAN discovery.")
     }
     
     public func updateLocation(_ location: CLLocationCoordinate2D?) {
@@ -70,6 +77,9 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
         queue.async {
             guard !self.isScanning else { return }
             self.isScanning = true
+
+            LanDiscovery.shared.delegate = self.delegate
+            LanDiscovery.shared.start()
 
             if self.activeMode == .companionHardware {
                 self.startCompanionListener()
@@ -90,6 +100,7 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
             guard self.isScanning else { return }
             self.isScanning = false
             self.stopCompanionListener()
+            LanDiscovery.shared.stop()
             DispatchQueue.main.async {
                 self.scanTimer?.invalidate()
                 self.scanTimer = nil
@@ -100,6 +111,7 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
     
     private func performScanCycle() {
         queue.async {
+            LanDiscovery.shared.scanTick()
             switch self.activeMode {
             case .privateMobileWiFi:
                 self.performPrivateMobileWiFiScan()

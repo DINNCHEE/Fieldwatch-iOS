@@ -54,7 +54,7 @@ public struct SettingsView: View {
                     })
 
                     if wifiMode == .publicConnectedOnly {
-                        Text("iOS kısıtı: App Store modunda sadece bağlı olduğun Wi-Fi görünür. Tüm ağları görmek için TrollStore (MobileWiFi) veya ESP32 Companion gerekir.")
+                        Text("Stock iOS pasif Wi-Fi taramasına izin vermez. Bu mod bağlı AP + LAN keşfi (Bonjour/UPnP cihazlar + yerel ağ taraması) yapar. Tüm kablosuz ağlar için TrollStore (MobileWiFi) veya ESP32 Companion gerekir.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
