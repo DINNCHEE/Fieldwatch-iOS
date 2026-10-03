@@ -270,18 +270,13 @@ extension BleScanner: CBPeripheralDelegate {
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard error == nil, let services = peripheral.services else {
-            if var p = Self.takePending() {
-                Self.setPending(GattPending(peripheral: p.peripheral, completion: p.completion,
-                                            services: p.services, pendingReads: 0,
-                                            finished: false, info: p.info))
-            }
-            return
+            return // Timeout path completes; nothing to salvage without services.
         }
-        var pending = Self.takePending()
+        guard var pending = Self.takePending() else { return }
         for service in services {
-            pending?.services.append(service.uuid.uuidString)
+            pending.services.append(service.uuid.uuidString)
             peripheral.discoverCharacteristics(nil, for: service)
-            pending?.pendingReads += 1
+            pending.pendingReads += 1
         }
         Self.setPending(pending)
         if services.isEmpty {
@@ -292,8 +287,8 @@ extension BleScanner: CBPeripheralDelegate {
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        var pending = Self.takePending()
-        pending?.pendingReads = max(0, (pending?.pendingReads ?? 1) - 1)
+        guard var pending = Self.takePending() else { return }
+        pending.pendingReads = max(0, pending.pendingReads - 1)
         if error == nil, let chars = service.characteristics {
             let want: Set<String> = ["2A29", "2A24", "2A25", "2A26", "2A27", "2A23"]
             for ch in chars where service.uuid.uuidString.uppercased().contains("180A") {
@@ -301,11 +296,11 @@ extension BleScanner: CBPeripheralDelegate {
                 let key = short.count >= 8 ? String(short.dropFirst(4).prefix(4)) : short
                 if want.contains(key) {
                     peripheral.readValue(for: ch)
-                    pending?.pendingReads += 1
+                    pending.pendingReads += 1
                 }
             }
         }
-        let done = (pending?.pendingReads ?? 0) <= 0
+        let done = pending.pendingReads <= 0
         Self.setPending(pending)
         if done, let p = Self.takePending() {
             finishGatt(p.info, peripheral: peripheral)
@@ -313,8 +308,8 @@ extension BleScanner: CBPeripheralDelegate {
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        var pending = Self.takePending()
-        pending?.pendingReads = max(0, (pending?.pendingReads ?? 1) - 1)
+        guard var pending = Self.takePending() else { return }
+        pending.pendingReads = max(0, pending.pendingReads - 1)
         if error == nil,
            let data = characteristic.value,
            let text = String(data: data, encoding: .utf8)?
@@ -323,15 +318,15 @@ extension BleScanner: CBPeripheralDelegate {
             let uuid = characteristic.uuid.uuidString.replacingOccurrences(of: "-", with: "").uppercased()
             let key = uuid.count >= 8 ? String(uuid.dropFirst(4).prefix(4)) : uuid
             switch key {
-            case "2A29": pending?.info.manufacturer = text
-            case "2A24": pending?.info.model = text
-            case "2A25": pending?.info.serial = text
-            case "2A26": pending?.info.firmware = text
-            case "2A27": pending?.info.hardware = text
+            case "2A29": pending.info.manufacturer = text
+            case "2A24": pending.info.model = text
+            case "2A25": pending.info.serial = text
+            case "2A26": pending.info.firmware = text
+            case "2A27": pending.info.hardware = text
             default: break
             }
         }
-        let done = (pending?.pendingReads ?? 0) <= 0
+        let done = pending.pendingReads <= 0
         Self.setPending(pending)
         if done, let p = Self.takePending() {
             finishGatt(p.info, peripheral: peripheral)
