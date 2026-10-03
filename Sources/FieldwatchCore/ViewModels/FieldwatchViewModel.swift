@@ -79,6 +79,24 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
         coTravelingCount = 0
         lastTakPublishTimes.removeAll()
     }
+
+    // MARK: - Sit sessions (Reports)
+    @Published public var activeSit: SitSession?
+
+    public func startSit(name: String) {
+        if activeSit != nil { endSit() }
+        activeSit = SitSession(name: name, startedAt: Date())
+    }
+
+    public func endSit() {
+        guard var sit = activeSit else { return }
+        let ranked = sightings.values.sorted { $0.lastRssi > $1.lastRssi }
+        sit.endedAt = Date()
+        sit.deviceCount = ranked.count
+        sit.topDevices = ranked.prefix(10).map { "\($0.displayName) (\($0.lastRssi))" }
+        SitStore.shared.save(sit)
+        activeSit = nil
+    }
     
     // MARK: - Ingestion Pipeline
     public func ingestObservation(_ observation: Observation) {
@@ -109,10 +127,23 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
             sighting.name = observation.name
         }
         
-        // RSSI sparkline history (keep last 20)
+        // RSSI sparkline history (keep last 20) + hunt samples (keep last 40)
         sighting.rssiHistory.append(observation.rssi)
         if sighting.rssiHistory.count > 20 {
             sighting.rssiHistory.removeFirst()
+        }
+        sighting.rssiSamples.append(RssiSample(rssi: observation.rssi, at: observation.timestamp))
+        if sighting.rssiSamples.count > 40 {
+            sighting.rssiSamples.removeFirst(sighting.rssiSamples.count - 40)
+        }
+
+        // Custom bookmark overlay (advertised name stays intact for matching)
+        let isFirstSighting = (sighting.count == 1)
+        if let custom = Persistence.shared.custom(id: id) {
+            sighting.isBookmarked = custom.bookmarked
+            if isFirstSighting && custom.alertEnabled {
+                Alerter.watched(sighting)
+            }
         }
         
         // Update facts
@@ -183,6 +214,7 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
         if sighting.isCoTraveling && !wasCoTraveling {
             coTravelingCount += 1
             coTravelAlert = sighting
+            Alerter.coTravel(sighting)
         }
         
         sightings[id] = sighting

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 #if SWIFT_PACKAGE
 import FieldwatchCore
 #endif
@@ -15,8 +16,13 @@ public struct DeviceDetailView: View {
     let sighting: Sighting
     @ObservedObject var viewModel: FieldwatchViewModel
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var showingHuntView = false
+    @State private var customName: String = ""
+    @State private var customNotes: String = ""
+    @State private var bookmarked: Bool = false
+    @State private var alertOn: Bool = false
+    @State private var copied: Bool = false
     
     public init(sighting: Sighting, viewModel: FieldwatchViewModel) {
         self.sighting = sighting
@@ -86,6 +92,32 @@ public struct DeviceDetailView: View {
                     }
                 }
 
+                // My label (name, notes, watch, alert) — persisted
+                Section("Benim Etiketim") {
+                    TextField("Özel isim", text: $customName)
+                        .onSubmit { saveCustom() }
+                    TextField("Not", text: $customNotes)
+                        .onSubmit { saveCustom() }
+                    Toggle("İzle (yıldızla)", isOn: $bookmarked)
+                        .onChange(of: bookmarked, perform: { _ in saveCustom() })
+                    Toggle("Görülünce uyar", isOn: $alertOn)
+                        .onChange(of: alertOn, perform: { _ in saveCustom() })
+                    Button("Kaydet") { saveCustom() }
+                    if copied {
+                        Text("Kopyalandı ✓")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    }
+                }
+                .onAppear {
+                    if let c = Persistence.shared.custom(id: sighting.identifier) {
+                        customName = c.customName ?? ""
+                        customNotes = c.notes ?? ""
+                        bookmarked = c.bookmarked
+                        alertOn = c.alertEnabled
+                    }
+                }
+
                 // Hunt & Locate action
                 Section {
                     Button {
@@ -101,6 +133,31 @@ public struct DeviceDetailView: View {
                             Image(systemName: "chevron.right")
                         }
                         .foregroundColor(.green)
+                    }
+                }
+
+                // Network actions (Wi-Fi only): copy ID + open router panel.
+                // iPhone cannot kick devices (no packet injection); blocking
+                // is done in your own router's admin page.
+                if sighting.kind == .wifi {
+                    Section("Ağ İşlemleri") {
+                        Button {
+                            UIPasteboard.general.string = "\(sighting.displayName)\n\(sighting.identifier)"
+                            copied = true
+                        } label: {
+                            Text("MAC / IP Kopyala")
+                        }
+                        if let gw = LanDiscovery.shared.lastGateway,
+                           let url = URL(string: "http://\(gw)") {
+                            Button {
+                                UIApplication.shared.open(url)
+                            } label: {
+                                Text("Router Panelini Aç (\(gw))")
+                            }
+                        }
+                        Text("Not: iPhone cihaz düşüremez. Engellemek için router panelinden MAC engelleme yap.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
                 
@@ -216,5 +273,22 @@ public struct DeviceDetailView: View {
                 HuntView(sighting: sighting, viewModel: viewModel)
             }
         }
+    }
+
+    private func saveCustom() {
+        let name = customName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let notes = customNotes.trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.isEmpty && notes.isEmpty && !bookmarked && !alertOn {
+            Persistence.shared.removeCustom(id: sighting.identifier)
+        } else {
+            Persistence.shared.setCustom(CustomDevice(
+                id: sighting.identifier,
+                customName: name.isEmpty ? nil : name,
+                notes: notes.isEmpty ? nil : notes,
+                bookmarked: bookmarked,
+                alertEnabled: alertOn
+            ))
+        }
+        if alertOn { Alerter.requestNotificationPermission() }
     }
 }

@@ -77,6 +77,32 @@ public struct SettingsView: View {
                     }
                 }
                 
+                // Watchlist alerts
+                Section("Uyarılar (Watchlist)") {
+                    Toggle("Bip sesi", isOn: Binding(
+                        get: { Alerter.beepEnabled },
+                        set: { Alerter.setBeep($0) }
+                    ))
+                    Toggle("Sesli uyarı", isOn: Binding(
+                        get: { Alerter.voiceEnabled },
+                        set: { Alerter.setVoice($0) }
+                    ))
+                    Toggle("Bildirim", isOn: Binding(
+                        get: { Alerter.notifyEnabled },
+                        set: {
+                            Alerter.setNotify($0)
+                            if $0 { Alerter.requestNotificationPermission() }
+                        }
+                    ))
+                    Button("Test Uyarısı") {
+                        Alerter.requestNotificationPermission()
+                        Alerter.test()
+                    }
+                    Text("Takip alarmı + işaretli cihazlar için. Cihaz detayından yıldızla işaretle ve alarmı aç.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
                 // TAK / Cursor on Target Integration
                 Section("ATAK / iTAK Integration (Cursor on Target)") {
                     Toggle("Enable CoT Broadcast", isOn: $takEnabled)

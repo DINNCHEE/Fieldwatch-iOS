@@ -28,6 +28,9 @@ public final class SignatureEngine: @unchecked Sendable {
             lock.lock()
             self.catalog = parsed
             self.fleets = parsed.fleets
+            for i in self.fleets.indices where Persistence.shared.hasFleet(id: self.fleets[i].id) {
+                self.fleets[i].enabled = Persistence.shared.fleetEnabled(id: self.fleets[i].id)
+            }
             lock.unlock()
             return true
         } catch {
@@ -72,6 +75,7 @@ public final class SignatureEngine: @unchecked Sendable {
         if let idx = fleets.firstIndex(where: { $0.id == id }) {
             fleets[idx].enabled = enabled
         }
+        Persistence.shared.setFleet(id: id, enabled: enabled)
     }
     
     // MARK: - Matching Logic

@@ -76,6 +76,18 @@ public struct MainContentView: View {
                 Label("Scanner", systemImage: "antenna.radiowaves.left.and.right")
             }
             
+            // Categories Tab
+            CategoryView(viewModel: viewModel, selectedSighting: $selectedSighting)
+                .tabItem {
+                    Label("Sınıflar", systemImage: "square.grid.2x2")
+                }
+
+            // Reports Tab
+            ReportsView(viewModel: viewModel)
+                .tabItem {
+                    Label("Raporlar", systemImage: "doc.text")
+                }
+
             // Fleets Tab
             FleetsView()
                 .tabItem {

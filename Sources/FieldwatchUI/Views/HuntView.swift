@@ -19,15 +19,27 @@ public struct HuntView: View {
     @Environment(\.dismiss) private var dismiss
     
     @State private var pulseAnimation = false
-    
+    @State private var vibrateEnabled = true
+    @State private var lastTick = Date.distantPast
+    @State private var tickTimer: Timer?
+
     public init(sighting: Sighting, viewModel: FieldwatchViewModel) {
         self.sighting = sighting
         self.viewModel = viewModel
     }
-    
+
     // Live sighting from view model
     private var liveSighting: Sighting {
         viewModel.sightings[sighting.identifier] ?? sighting
+    }
+
+    private var isMissing: Bool {
+        viewModel.sightings[sighting.identifier] == nil
+    }
+
+    private var cue: HuntCue {
+        Hunt.cue(samples: liveSighting.rssiSamples, now: Date(),
+                 lastSeen: liveSighting.lastSeen, missing: isMissing)
     }
     
     // Proximity score 0.0 to 1.0 (clamped -100 to -30 dBm)
@@ -117,16 +129,29 @@ public struct HuntView: View {
                 }
                 
                 Spacer()
-                
-                // Distance Approximation
+
+                // Hunt cue (trend, not meters)
                 VStack(spacing: 8) {
-                    Text(distanceEstimateText)
+                    Text(cue.rawValue.uppercased())
                         .font(.system(.title3, design: .monospaced))
                         .fontWeight(.bold)
                         .foregroundColor(.white)
-                    Text("Signal strength updates continuously via CoreBluetooth")
-                        .font(.caption2)
+                    Text(cue.hint)
+                        .font(.caption)
                         .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                    HStack(spacing: 16) {
+                        Text("Peak \(liveSighting.maxRssi) dBm")
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundColor(.secondary)
+                        Text(lastHeardText)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundColor(.secondary)
+                    }
+                    Toggle("Titreşim", isOn: $vibrateEnabled)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: 220)
                 }
                 .padding(.bottom, 30)
             }
@@ -134,11 +159,37 @@ public struct HuntView: View {
         }
         .onAppear {
             pulseAnimation = true
-            triggerHaptic()
+            startTickLoop()
+        }
+        .onDisappear {
+            tickTimer?.invalidate()
+            tickTimer = nil
         }
         .onChange(of: liveSighting.lastRssi, perform: { _ in
-            triggerHaptic()
+            geigerFire()
         })
+    }
+
+    private var lastHeardText: String {
+        let age = Int(Date().timeIntervalSince(liveSighting.lastSeen))
+        if age < 2 { return "şimdi duyuldu" }
+        return "\(age) sn önce"
+    }
+
+    private func startTickLoop() {
+        tickTimer?.invalidate()
+        lastTick = Date.distantPast
+        tickTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            geigerFire()
+        }
+    }
+
+    private func geigerFire() {
+        guard let interval = Hunt.tickInterval(rssi: liveSighting.lastRssi, cue: cue) else { return }
+        guard Date().timeIntervalSince(lastTick) >= interval else { return }
+        lastTick = Date()
+        Alerter.tick()
+        if vibrateEnabled { triggerHaptic() }
     }
     
     private var huntColor: Color {
@@ -146,21 +197,6 @@ public struct HuntView: View {
         if proximity > 0.45 { return .yellow }
         if proximity > 0.20 { return .orange }
         return .red
-    }
-    
-    private var distanceEstimateText: String {
-        let rssi = liveSighting.lastRssi
-        if rssi >= -45 {
-            return "IMMEDIATE CONTACT (< 1 meter)"
-        } else if rssi >= -60 {
-            return "VERY CLOSE (~ 1 - 3 meters)"
-        } else if rssi >= -75 {
-            return "NEARBY (~ 3 - 10 meters)"
-        } else if rssi >= -85 {
-            return "MODERATE DISTANCE (~ 10 - 25 meters)"
-        } else {
-            return "WEAK SIGNAL (> 25 meters)"
-        }
     }
     
     private func triggerHaptic() {

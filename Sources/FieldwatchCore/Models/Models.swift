@@ -260,6 +260,7 @@ public struct Sighting: Identifiable, Sendable {
     public var isCoTraveling: Bool // "Moving with you"
     public var isBookmarked: Bool
     public var fastPairPairing: Bool
+    public var rssiSamples: [RssiSample]
     
     public init(
         identifier: String,
@@ -283,7 +284,8 @@ public struct Sighting: Identifiable, Sendable {
         decodedFields: [DecodedField] = [],
         isCoTraveling: Bool = false,
         isBookmarked: Bool = false,
-        fastPairPairing: Bool = false
+        fastPairPairing: Bool = false,
+        rssiSamples: [RssiSample] = []
     ) {
         self.identifier = identifier
         self.kind = kind
@@ -307,6 +309,7 @@ public struct Sighting: Identifiable, Sendable {
         self.isCoTraveling = isCoTraveling
         self.isBookmarked = isBookmarked
         self.fastPairPairing = fastPairPairing
+        self.rssiSamples = rssiSamples
     }
 }
 
@@ -340,8 +343,12 @@ public struct Rule: Codable, Sendable {
 
 // MARK: - Display helpers (never show bare "Unknown Device")
 public extension Sighting {
-    /// Best human-readable title: advertised name > fleet > role hint > vendor > kind fallback.
+    /// Best human-readable title: custom name > advertised name > fleet > role hint > vendor > kind fallback.
     var displayName: String {
+        if let cn = Persistence.shared.custom(id: identifier)?.customName?
+            .trimmingCharacters(in: .whitespacesAndNewlines), !cn.isEmpty {
+            return cn
+        }
         if let n = name?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty {
             return n
         }

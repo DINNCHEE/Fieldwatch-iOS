@@ -35,6 +35,9 @@ public final class LanDiscovery: NSObject, @unchecked Sendable {
     private var lastSweep: Date = .distantPast
     private var sweeping = false
 
+    // Last seen gateway (subnet base .1) for the router-panel shortcut.
+    public private(set) var lastGateway: String?
+
     private static let bonjourTypes = [
         "_hap._tcp.", "_airplay._tcp.", "_raop._tcp.",
         "_mediaremotetv._tcp.", "_companion-link._tcp.",
@@ -349,6 +352,8 @@ extension LanDiscovery {
         let hostBits = 32 - mask.nonzeroBitCount
         guard hostBits >= 1 && hostBits <= 8 else { return nil } // /24 or smaller only
         let base = ip & mask
+        let b0 = base & 0xFF, b1 = (base >> 8) & 0xFF, b2 = (base >> 16) & 0xFF, b3 = (base >> 24) & 0xFF
+        lastGateway = "\(b0).\(b1).\(b2).\(b3 + 1)"
         let count = 1 << hostBits
         var out: [String] = []
         out.reserveCapacity(count)
