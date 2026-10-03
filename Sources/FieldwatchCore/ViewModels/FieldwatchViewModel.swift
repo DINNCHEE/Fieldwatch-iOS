@@ -146,6 +146,17 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
             sighting.fleetName = match.fleetName
             sighting.fleetColorIndex = match.colorIndex
         }
+
+        // Resolve vendor name (Wi-Fi OUI, BLE Company ID)
+        if sighting.vendor == nil || sighting.vendor!.isEmpty {
+            if observation.kind == .wifi, let oui = observation.facts.vendorOui, !oui.isEmpty,
+               let v = VendorLookup.ouiVendor(for: oui) {
+                sighting.vendor = v
+            } else if let mfg = observation.facts.mfgRecords.first,
+                      let v = VendorLookup.companyName(for: mfg.companyId) {
+                sighting.vendor = v
+            }
+        }
         
         // Decoded fields & role hints
         sighting.roleHints = AdvPayloadDecoder.roleHints(for: sighting)
@@ -192,16 +203,18 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
             if filterOnlyCoTraveling && !s.isCoTraveling {
                 return false
             }
-            if filterOnlyIdentified && (s.fleetName == nil && s.roleHints.isEmpty) {
+            if filterOnlyIdentified && (s.fleetName == nil && s.roleHints.isEmpty && s.vendor == nil) {
                 return false
             }
             if !searchQuery.isEmpty {
                 let q = searchQuery.lowercased()
                 let nameMatch = s.name?.lowercased().contains(q) ?? false
+                let displayMatch = s.displayName.lowercased().contains(q)
                 let idMatch = s.identifier.lowercased().contains(q)
                 let fleetMatch = s.fleetName?.lowercased().contains(q) ?? false
+                let vendorMatch = s.vendor?.lowercased().contains(q) ?? false
                 let hintMatch = s.roleHints.contains(where: { $0.label.lowercased().contains(q) })
-                return nameMatch || idMatch || fleetMatch || hintMatch
+                return nameMatch || displayMatch || idMatch || fleetMatch || vendorMatch || hintMatch
             }
             return true
         }.sorted { $0.lastRssi > $1.lastRssi }

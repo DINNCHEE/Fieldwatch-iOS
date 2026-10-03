@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Network
 import NetworkExtension
 import CoreLocation
 #if canImport(Darwin)
@@ -37,6 +38,10 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
     
     // Private MobileWiFi symbols if dynamically loaded
     private var mobileWiFiHandle: UnsafeMutableRawPointer?
+
+    // Companion hardware (ESP32 Marauder / UDP bridge) listener
+    private var companionListener: NWListener?
+    public var companionPort: UInt16 = 8888
     
     public override init() {
         super.init()
@@ -65,6 +70,10 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
         queue.async {
             guard !self.isScanning else { return }
             self.isScanning = true
+
+            if self.activeMode == .companionHardware {
+                self.startCompanionListener()
+            }
             
             DispatchQueue.main.async {
                 self.delegate?.wifiScannerStateChanged(isScanning: true, mode: self.activeMode)
@@ -80,6 +89,7 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
         queue.async {
             guard self.isScanning else { return }
             self.isScanning = false
+            self.stopCompanionListener()
             DispatchQueue.main.async {
                 self.scanTimer?.invalidate()
                 self.scanTimer = nil
@@ -101,6 +111,70 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
         }
     }
     
+    // MARK: - Mode switching (Settings UI)
+    public func setMode(_ mode: ScanMode, companionPort port: UInt16 = 8888) {
+        queue.async {
+            let wasScanning = self.isScanning
+            if wasScanning && self.activeMode == .companionHardware {
+                self.stopCompanionListener()
+            }
+            self.activeMode = mode
+            self.companionPort = port
+            if wasScanning && mode == .companionHardware {
+                self.startCompanionListener()
+            }
+            let m = mode
+            DispatchQueue.main.async {
+                self.delegate?.wifiScannerStateChanged(isScanning: self.isScanning, mode: m)
+            }
+        }
+    }
+
+    // MARK: - Companion UDP listener (ESP32 Marauder bridge)
+    // Expected datagram (UTF-8 JSON): {"bssid":"AA:BB:CC:DD:EE:FF","ssid":"Name","rssi":-70,"channel":6}
+    private func startCompanionListener() {
+        stopCompanionListener()
+        guard let port = NWEndpoint.Port(rawValue: companionPort) else { return }
+        do {
+            let listener = try NWListener(using: .udp, on: port)
+            listener.newConnectionHandler = { [weak self] conn in
+                conn.start(queue: .global(qos: .utility))
+                self?.receiveCompanion(conn)
+            }
+            listener.stateUpdateHandler = { state in
+                print("WifiScanner companion listener: \(state)")
+            }
+            listener.start(queue: queue)
+            companionListener = listener
+        } catch {
+            print("WifiScanner: companion listener failed: \(error)")
+        }
+    }
+
+    private func stopCompanionListener() {
+        companionListener?.cancel()
+        companionListener = nil
+    }
+
+    private func receiveCompanion(_ conn: NWConnection) {
+        conn.receiveMessage { [weak self] data, _, _, error in
+            if let data = data, error == nil {
+                self?.handleCompanionData(data)
+            }
+            if error == nil {
+                self?.receiveCompanion(conn)
+            }
+        }
+    }
+
+    private func handleCompanionData(_ data: Data) {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let bssid = obj["bssid"] as? String, !bssid.isEmpty else { return }
+        let ssid = obj["ssid"] as? String
+        let rssi = (obj["rssi"] as? Int) ?? -80
+        let channel = obj["channel"] as? Int
+        ingestCompanionPacket(bssid: bssid, ssid: ssid, rssi: rssi, channel: channel, vendorOui: nil)
+    }
     // MARK: - Public Mode: Connected Network Details
     private func performPublicConnectedScan() {
         NEHotspotNetwork.fetchCurrent { [weak self] network in

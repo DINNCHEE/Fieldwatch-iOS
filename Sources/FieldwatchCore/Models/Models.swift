@@ -334,3 +334,28 @@ public struct Rule: Codable, Sendable {
     public let radio: String? // "WIFI", "BLE", "ANY"
     public let enabled: Bool
 }
+
+// MARK: - Display helpers (never show bare "Unknown Device")
+public extension Sighting {
+    /// Best human-readable title: advertised name > fleet > role hint > vendor > kind fallback.
+    var displayName: String {
+        if let n = name?.trimmingCharacters(in: .whitespacesAndNewlines), !n.isEmpty {
+            return n
+        }
+        if let f = fleetName, !f.isEmpty { return f }
+        if let hint = roleHints.first?.label, !hint.isEmpty { return hint }
+        if let v = vendor, !v.isEmpty { return v }
+        if kind == .wifi { return "Wi-Fi AP \(String(identifier.prefix(8)))" }
+        return "BLE \(String(identifier.prefix(8)))"
+    }
+
+    /// Secondary line: vendor / fleet / service info.
+    var subtitle: String {
+        var parts: [String] = []
+        if let v = vendor, !v.isEmpty { parts.append(v) }
+        if let f = fleetName, f != displayName { parts.append(f) }
+        if let hint = roleHints.first?.label, hint != displayName { parts.append(hint) }
+        parts.append(kind == .wifi ? "Wi-Fi" : "BLE")
+        return parts.joined(separator: " · ")
+    }
+}

@@ -67,7 +67,7 @@ public struct HuntView: View {
                 
                 // Target Information
                 VStack(spacing: 4) {
-                    Text(liveSighting.name ?? liveSighting.fleetName ?? "Unknown Device")
+                    Text(liveSighting.displayName)
                         .font(.system(.title2, design: .monospaced))
                         .fontWeight(.heavy)
                         .foregroundColor(.white)

@@ -97,7 +97,7 @@ public struct RadarView: View {
                                 }
                             }
                             
-                            Text(sighting.name ?? sighting.fleetName ?? String(sighting.identifier.prefix(6)))
+                            Text(sighting.displayName)
                                 .font(.system(size: 8, weight: .bold, design: .monospaced))
                                 .foregroundColor(.white)
                                 .lineLimit(1)

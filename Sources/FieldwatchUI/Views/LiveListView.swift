@@ -40,7 +40,7 @@ public struct LiveListView: View {
                         
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                Text(sighting.name ?? sighting.fleetName ?? "Unknown Device")
+                                Text(sighting.displayName)
                                     .font(.system(.subheadline, design: .monospaced))
                                     .fontWeight(.bold)
                                     .foregroundColor(.primary)
@@ -79,6 +79,16 @@ public struct LiveListView: View {
                                         .cornerRadius(4)
                                 }
                                 
+                                if let vendor = sighting.vendor, vendor != sighting.displayName {
+                                    Text(vendor)
+                                        .font(.system(size: 9, weight: .semibold))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.blue.opacity(0.2))
+                                        .foregroundColor(.blue)
+                                        .cornerRadius(4)
+                                }
+
                                 if let fleet = sighting.fleetName {
                                     Text(fleet)
                                         .font(.system(size: 9, weight: .semibold))

@@ -17,6 +17,8 @@ public struct SettingsView: View {
     @State private var takHost: String = TakPublisher.shared.targetHost
     @State private var takPort: String = String(TakPublisher.shared.targetPort)
     @State private var takEnabled: Bool = TakPublisher.shared.isEnabled
+    @State private var wifiMode: WifiScanner.ScanMode = WifiScanner.shared.activeMode
+    @State private var companionPort: String = String(WifiScanner.shared.companionPort)
     @State private var showingExportSheet = false
     @State private var exportText = ""
     
@@ -40,10 +42,36 @@ public struct SettingsView: View {
                         }
                     })
                     
-                    HStack {
-                        Text("Wi-Fi Scanner Mode")
-                        Spacer()
-                        Text(viewModel.wifiScanMode.rawValue)
+                    Picker("Wi-Fi Scanner Mode", selection: $wifiMode) {
+                        Text("Connected AP Only").tag(WifiScanner.ScanMode.publicConnectedOnly)
+                        Text("MobileWiFi (TrollStore)").tag(WifiScanner.ScanMode.privateMobileWiFi)
+                        Text("Companion (ESP32)").tag(WifiScanner.ScanMode.companionHardware)
+                    }
+                    .onChange(of: wifiMode, perform: { mode in
+                        let port = UInt16(companionPort) ?? 8888
+                        WifiScanner.shared.setMode(mode, companionPort: port)
+                        viewModel.wifiScanMode = mode
+                    })
+
+                    if wifiMode == .publicConnectedOnly {
+                        Text("iOS kısıtı: App Store modunda sadece bağlı olduğun Wi-Fi görünür. Tüm ağları görmek için TrollStore (MobileWiFi) veya ESP32 Companion gerekir.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    if wifiMode == .companionHardware {
+                        HStack {
+                            Text("Companion UDP Port")
+                            Spacer()
+                            TextField("Port", text: $companionPort)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .onSubmit {
+                                    let port = UInt16(companionPort) ?? 8888
+                                    WifiScanner.shared.setMode(.companionHardware, companionPort: port)
+                                }
+                        }
+                        Text("ESP32 köprüsü bu porta JSON göndermeli: {\"bssid\":\"AA:BB:CC:DD:EE:FF\",\"ssid\":\"Ad\",\"rssi\":-70}")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -156,7 +184,7 @@ public struct SettingsView: View {
             [
                 "id": s.identifier,
                 "radio": s.kind.rawValue,
-                "name": s.name ?? "",
+                "name": s.displayName,
                 "fleet": s.fleetName ?? "",
                 "rssi": s.lastRssi,
                 "coTraveling": s.isCoTraveling,

@@ -30,7 +30,7 @@ public struct DeviceDetailView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text(sighting.name ?? sighting.fleetName ?? "Unknown Device")
+                            Text(sighting.displayName)
                                 .font(.system(.title2, design: .monospaced))
                                 .fontWeight(.bold)
                             Spacer()
@@ -46,6 +46,12 @@ public struct DeviceDetailView: View {
                         Text(sighting.identifier)
                             .font(.system(.footnote, design: .monospaced))
                             .foregroundColor(.secondary)
+
+                        if let vendor = sighting.vendor, !vendor.isEmpty {
+                            Text(vendor)
+                                .font(.system(.subheadline, design: .monospaced))
+                                .foregroundColor(.blue)
+                        }
                         
                         if sighting.isCoTraveling {
                             HStack {
