@@ -69,6 +69,23 @@ public struct DeviceDetailView: View {
                     .padding(.vertical, 4)
                 }
                 
+                // Identity guess (what the radio is advertising)
+                Section("What This Looks Like") {
+                    let guessNames: [String] = sighting.fleetName.map { [$0] } ?? []
+                    let guess = DeviceExplain.guess(sighting: sighting, signatureNames: guessNames)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(guess.headline)
+                            .font(.system(.subheadline))
+                            .fontWeight(.bold)
+                        Text(guess.because)
+                            .font(.system(.caption))
+                            .foregroundColor(.secondary)
+                        Text("Confidence: \(guess.confidence.rawValue)")
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundColor(.secondary)
+                    }
+                }
+
                 // Hunt & Locate action
                 Section {
                     Button {
