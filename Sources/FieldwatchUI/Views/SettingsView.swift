@@ -23,6 +23,8 @@ public struct SettingsView: View {
     @State private var wigleToken: String = ""
     @State private var wigleSaved: Bool = WigleLookup.hasCredentials
     @State private var catalogStatus: String = ""
+    @State private var shodanText: String = ""
+    @State private var shodanLoading: Bool = false
     @State private var showingExportSheet = false
     @State private var exportText = ""
     
@@ -213,6 +215,48 @@ public struct SettingsView: View {
                     NavigationLink("Ultrasonik Tarama") { UltrasonicView() }
                     NavigationLink("OBD Okuma (kendi aracın)") { ObdView() }
                     NavigationLink("Güvenlik Rehberleri") { GuidesView() }
+                }
+
+                // Internet-side view of own public IP (Shodan InternetDB, keyless)
+                Section("İnternet Görünümüm") {
+                    Button(shodanLoading ? "Sorgulanıyor…" : "Dışarıdan Nasıl Görünüyorum?") {
+                        shodanLoading = true
+                        shodanText = ""
+                        Task {
+                            var lines: [String] = []
+                            if let ip = await ShodanLookup.publicIP() {
+                                lines.append("Dış IP: \(ip)")
+                                if let host = await ShodanLookup.lookup(ip: ip) {
+                                    lines.append(host.ports.isEmpty
+                                        ? "Açık port yok (CGNAT arkasında olabilirsin)."
+                                        : "Açık portlar: \(host.ports.map(String.init).joined(separator: ", "))")
+                                    if !host.hostnames.isEmpty {
+                                        lines.append("İsimler: \(host.hostnames.joined(separator: ", "))")
+                                    }
+                                    if !host.vulns.isEmpty {
+                                        lines.append("Açıklar: \(host.vulns.joined(separator: ", "))")
+                                    }
+                                } else {
+                                    lines.append("Kayıt bulunamadı (temiz olabilir).")
+                                }
+                            } else {
+                                lines.append("Dış IP alınamadı.")
+                            }
+                            await MainActor.run {
+                                shodanText = lines.joined(separator: "\n")
+                                shodanLoading = false
+                            }
+                        }
+                    }
+                    .disabled(shodanLoading)
+                    if !shodanText.isEmpty {
+                        Text(shodanText)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Text("Kaynak: Shodan InternetDB (anahtarsız, salt-okunur).")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                 }
 
                 // Data & Export
