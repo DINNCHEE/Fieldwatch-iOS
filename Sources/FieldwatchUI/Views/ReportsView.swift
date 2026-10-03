@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import CoreImage
 #if SWIFT_PACKAGE
 import FieldwatchCore
 #endif
@@ -101,39 +102,33 @@ public struct ReportsView: View {
                             .foregroundColor(.secondary)
                     }
                     ForEach(sits) { sit in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(sit.name)
-                                    .font(.system(.body, weight: .semibold))
-                                Spacer()
-                                Text(sit.durationText)
-                                    .font(.caption.monospaced())
-                                    .foregroundColor(.secondary)
-                            }
-                            Text("\(sit.deviceCount) cihaz · \(sit.startedAt.formatted(date: .abbreviated, time: .shortened))")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            if !sit.topDevices.isEmpty {
-                                Text(sit.topDevices.prefix(3).joined(separator: " · "))
-                                    .font(.system(size: 10, design: .monospaced))
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(2)
-                            }
-                            HStack {
-                                Button("Paylaş") {
-                                    shareText = SitStore.shared.exportJSON(sit)
-                                    showingShare = true
+                        NavigationLink {
+                            SitDetailView(sit: sit, viewModel: viewModel, onDelete: {
+                                SitStore.shared.delete(sit)
+                                sits = SitStore.shared.all()
+                            })
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(sit.name)
+                                        .font(.system(.body, weight: .semibold))
+                                    Spacer()
+                                    Text(sit.durationText)
+                                        .font(.caption.monospaced())
+                                        .foregroundColor(.secondary)
                                 }
-                                .font(.caption)
-                                Spacer()
-                                Button("Sil", role: .destructive) {
-                                    SitStore.shared.delete(sit)
-                                    sits = SitStore.shared.all()
+                                Text("\(sit.deviceCount) cihaz · \(sit.startedAt.formatted(date: .abbreviated, time: .shortened))")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                if !sit.topDevices.isEmpty {
+                                    Text(sit.topDevices.prefix(3).joined(separator: " · "))
+                                        .font(.system(size: 10, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(2)
                                 }
-                                .font(.caption)
                             }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
             }
@@ -143,5 +138,195 @@ public struct ReportsView: View {
             }
             .onAppear { sits = SitStore.shared.all() }
         }
+    }
+}
+
+public struct SitDetailView: View {
+    let sit: SitSession
+    @ObservedObject var viewModel: FieldwatchViewModel
+    var onDelete: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var showingShare = false
+    @State private var shareItems: [Any] = []
+    @State private var qrImage: UIImage?
+    @State private var status = ""
+
+    public var body: some View {
+        List {
+            if !sit.path.isEmpty {
+                Section("Yol (\(sit.path.count) nokta)") {
+                    SharedMap(
+                        trail: sit.path.map {
+                            CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+                        },
+                        points: []
+                    )
+                    .frame(height: 240)
+                    .cornerRadius(12)
+                }
+            }
+
+            Section("Cihazlar") {
+                ForEach(sit.topDevices.prefix(10), id: \.self) { device in
+                    Text(device)
+                        .font(.system(size: 11, design: .monospaced))
+                }
+            }
+
+            if let qr = qrImage {
+                Section("QR") {
+                    Image(uiImage: qr)
+                        .interpolation(.none)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 200)
+                }
+            }
+
+            Section("Dışa Aktar") {
+                Button("GPX Olarak Paylaş") {
+                    shareItems = [SitExport.gpx(sit: sit)]
+                    showingShare = true
+                }
+                Button("PDF Rapor Paylaş") {
+                    if let url = SitExport.pdf(sit: sit) {
+                        shareItems = [url]
+                        showingShare = true
+                    } else {
+                        status = "PDF oluşturulamadı."
+                    }
+                }
+                Button("QR Kod Oluştur") {
+                    qrImage = SitExport.qr(sit: sit)
+                }
+                Button("Wigle'a Yükle (gerçek MAC'li WiFi)") {
+                    status = "Hazırlanıyor…"
+                    Task {
+                        let rows = viewModel.sightings.values.filter {
+                            $0.kind == .wifi && $0.location != nil &&
+                            WigleUpload.isRealMac($0.identifier)
+                        }
+                        if rows.isEmpty {
+                            await MainActor.run { status = "Yüklenecek gerçek MAC'li WiFi yok." }
+                            return
+                        }
+                        let csv = WigleUpload.buildCSV(sightings: Array(rows))
+                        do {
+                            let msg = try await WigleUpload.upload(csv: csv)
+                            await MainActor.run { status = msg }
+                        } catch let error as WigleUpload.UploadError {
+                            await MainActor.run {
+                                switch error {
+                                case .noCredentials: status = "Önce Ayarlar'a Wigle anahtarı gir."
+                                case .nothingToUpload: status = "Yüklenecek veri yok."
+                                case .failed(let m): status = "Hata: \(m)"
+                                }
+                            }
+                        } catch {
+                            await MainActor.run { status = error.localizedDescription }
+                        }
+                    }
+                }
+                if !status.isEmpty {
+                    Text(status)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Button("Oturumu Sil", role: .destructive) {
+                    onDelete()
+                    dismiss()
+                }
+            }
+        }
+        .navigationTitle(sit.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingShare) {
+            ShareSheet(items: shareItems)
+        }
+    }
+}
+
+public struct SitExport: Sendable {
+    public static func gpx(sit: SitSession) -> String {
+        let formatter = ISO8601DateFormatter()
+        var out = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        out += "<gpx version=\"1.1\" creator=\"Fieldwatch-iOS\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n"
+        out += "<trk><name>\(sit.name.xmlEscaped)</name><trkseg>\n"
+        for p in sit.path {
+            out += "<trkpt lat=\"\(p.lat)\" lon=\"\(p.lon)\"><ele>\(p.alt)</ele><time>\(formatter.string(from: p.at))</time></trkpt>\n"
+        }
+        out += "</trkseg></trk>\n"
+        for device in sit.topDevices {
+            out += "<!-- \(device.xmlEscaped) -->\n"
+        }
+        out += "</gpx>"
+        return out
+    }
+
+    public static func pdf(sit: SitSession) -> URL? {
+        let meta = [
+            "Oturum: \(sit.name)",
+            "Başlangıç: \(sit.startedAt.formatted(date: .abbreviated, time: .shortened))",
+            "Süre: \(sit.durationText)",
+            "Cihaz: \(sit.deviceCount)",
+            "Nokta: \(sit.path.count)",
+        ]
+        let format = UIGraphicsPDFRendererFormat()
+        let page = CGRect(x: 0, y: 0, width: 595, height: 842)
+        let renderer = UIGraphicsPDFRenderer(bounds: page, format: format)
+        let data = renderer.pdfData { context in
+            context.beginPage()
+            var y: CGFloat = 40
+            let titleAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.boldSystemFont(ofSize: 20)]
+            ("Fieldwatch Raporu" as NSString).draw(at: CGPoint(x: 40, y: y), withAttributes: titleAttrs)
+            y += 36
+            let bodyAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 12)]
+            for line in meta {
+                (line as NSString).draw(at: CGPoint(x: 40, y: y), withAttributes: bodyAttrs)
+                y += 20
+            }
+            y += 12
+            ("Cihazlar" as NSString).draw(at: CGPoint(x: 40, y: y), withAttributes: titleAttrs)
+            y += 28
+            let smallAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.monospacedSystemFont(ofSize: 10, weight: .regular)]
+            for device in sit.topDevices.prefix(60) {
+                if y > 800 {
+                    context.beginPage()
+                    y = 40
+                }
+                (String(device.prefix(90)) as NSString).draw(at: CGPoint(x: 40, y: y), withAttributes: smallAttrs)
+                y += 15
+            }
+        }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("fieldwatch-\(sit.id.uuidString).pdf")
+        do {
+            try data.write(to: url, options: .atomic)
+            return url
+        } catch {
+            return nil
+        }
+    }
+
+    public static func qr(sit: SitSession) -> UIImage? {
+        let payload = "fieldwatch-sit:\(sit.id.uuidString):\(sit.name):\(sit.deviceCount)"
+        guard let data = payload.data(using: .utf8),
+              let filter = CIFilter(name: "CIQRCodeGenerator") else { return nil }
+        filter.setValue(data, forKey: "inputMessage")
+        filter.setValue("M", forKey: "inputCorrectionLevel")
+        guard let output = filter.outputImage else { return nil }
+        let scaled = output.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
+        let context = CIContext()
+        guard let cg = context.createCGImage(scaled, from: scaled.extent) else { return nil }
+        return UIImage(cgImage: cg)
+    }
+}
+
+private extension String {
+    var xmlEscaped: String {
+        replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
     }
 }

@@ -28,6 +28,7 @@ public struct CustomDevice: Codable, Sendable {
 private struct PersistedState: Codable {
     var fleets: [String: Bool] = [:]
     var customs: [String: CustomDevice] = [:]
+    var customFleets: [Fleet]?
 }
 
 public final class Persistence: @unchecked Sendable {
@@ -93,5 +94,47 @@ public final class Persistence: @unchecked Sendable {
     public func allCustoms() -> [CustomDevice] {
         lock.lock(); defer { lock.unlock() }
         return Array(state.customs.values)
+    }
+
+    // MARK: - Custom fleets + iCloud mirror
+    public func customFleetList() -> [Fleet] {
+        lock.lock(); defer { lock.unlock() }
+        return state.customFleets ?? []
+    }
+
+    public func saveCustomFleets(_ fleets: [Fleet]) {
+        lock.lock(); state.customFleets = fleets; lock.unlock()
+        save()
+    }
+
+    private static let iCloudFleetsKey = "fw_fleets_json"
+
+    /// Mirror fleet toggles to iCloud key-value store (best effort).
+    public func pushFleetsToCloud() {
+        lock.lock()
+        guard let data = try? JSONEncoder().encode(state.fleets),
+              let str = String(data: data, encoding: .utf8) else {
+            lock.unlock()
+            return
+        }
+        lock.unlock()
+        NSUbiquitousKeyValueStore.default.set(str, forKey: Self.iCloudFleetsKey)
+        NSUbiquitousKeyValueStore.default.synchronize()
+    }
+
+    /// Adopt iCloud fleet toggles when local has none saved.
+    public func pullFleetsFromCloudIfEmpty() {
+        lock.lock()
+        let empty = state.fleets.isEmpty
+        lock.unlock()
+        guard empty,
+              let str = NSUbiquitousKeyValueStore.default.string(forKey: Self.iCloudFleetsKey),
+              let data = str.data(using: .utf8),
+              let map = try? JSONDecoder().decode([String: Bool].self, from: data),
+              !map.isEmpty else { return }
+        lock.lock()
+        if state.fleets.isEmpty { state.fleets = map }
+        lock.unlock()
+        save()
     }
 }

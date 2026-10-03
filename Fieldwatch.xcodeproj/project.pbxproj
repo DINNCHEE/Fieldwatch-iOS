@@ -42,6 +42,21 @@
 		B10000000000000000000035 /* CameraStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000038 /* CameraStore.swift */; };
 		B10000000000000000000036 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000039 /* CameraView.swift */; };
 		B10000000000000000000037 /* SweepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000040 /* SweepView.swift */; };
+		B10000000000000000000038 /* DnsAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* DnsAudit.swift */; };
+		B10000000000000000000039 /* NvdLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000042 /* NvdLookup.swift */; };
+		B10000000000000000000040 /* ShodanLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000043 /* ShodanLookup.swift */; };
+		B10000000000000000000041 /* WigleUpload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000044 /* WigleUpload.swift */; };
+		B10000000000000000000042 /* GuidesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000045 /* GuidesView.swift */; };
+		B10000000000000000000043 /* EvilTwinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000046 /* EvilTwinView.swift */; };
+		B10000000000000000000044 /* AirspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000047 /* AirspaceView.swift */; };
+		B10000000000000000000045 /* CompassView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000048 /* CompassView.swift */; };
+		B10000000000000000000046 /* HotelModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000049 /* HotelModeView.swift */; };
+		B10000000000000000000047 /* ChannelChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000050 /* ChannelChartView.swift */; };
+		B10000000000000000000048 /* SharedMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000051 /* SharedMap.swift */; };
+		B10000000000000000000049 /* ObdView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000052 /* ObdView.swift */; };
+		B10000000000000000000050 /* UltrasonicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000053 /* UltrasonicView.swift */; };
+		B10000000000000000000051 /* SiriShortcuts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000054 /* SiriShortcuts.swift */; };
+		B10000000000000000000052 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000055 /* OnboardingView.swift */; };
 		B10000000000000000000017 /* fieldwatch-signatures-v2.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* fieldwatch-signatures-v2.json */; };
 		B10000000000000000000018 /* radiodb.bin in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* radiodb.bin */; };
 /* End PBXBuildFile section */
@@ -82,6 +97,21 @@
 		A10000000000000000000038 /* CameraStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Data/CameraStore.swift"; sourceTree = "<group>"; };
 		A10000000000000000000039 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/CameraView.swift"; sourceTree = "<group>"; };
 		A10000000000000000000040 /* SweepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/SweepView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000041 /* DnsAudit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Data/DnsAudit.swift"; sourceTree = "<group>"; };
+		A10000000000000000000042 /* NvdLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Data/NvdLookup.swift"; sourceTree = "<group>"; };
+		A10000000000000000000043 /* ShodanLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Data/ShodanLookup.swift"; sourceTree = "<group>"; };
+		A10000000000000000000044 /* WigleUpload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Data/WigleUpload.swift"; sourceTree = "<group>"; };
+		A10000000000000000000045 /* GuidesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/GuidesView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000046 /* EvilTwinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/EvilTwinView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000047 /* AirspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/AirspaceView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000048 /* CompassView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/CompassView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000049 /* HotelModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/HotelModeView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000050 /* ChannelChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/ChannelChartView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000051 /* SharedMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/SharedMap.swift"; sourceTree = "<group>"; };
+		A10000000000000000000052 /* ObdView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/ObdView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000053 /* UltrasonicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/UltrasonicView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000054 /* SiriShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchApp/SiriShortcuts.swift"; sourceTree = "<group>"; };
+		A10000000000000000000055 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/OnboardingView.swift"; sourceTree = "<group>"; };
 		A10000000000000000000017 /* fieldwatch-signatures-v2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/fieldwatch-signatures-v2.json"; sourceTree = "<group>"; };
 		A10000000000000000000018 /* radiodb.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = "Resources/radiodb.bin"; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -149,6 +179,21 @@
 				A10000000000000000000038 /* CameraStore.swift */,
 				A10000000000000000000039 /* CameraView.swift */,
 				A10000000000000000000040 /* SweepView.swift */,
+				A10000000000000000000041 /* DnsAudit.swift */,
+				A10000000000000000000042 /* NvdLookup.swift */,
+				A10000000000000000000043 /* ShodanLookup.swift */,
+				A10000000000000000000044 /* WigleUpload.swift */,
+				A10000000000000000000045 /* GuidesView.swift */,
+				A10000000000000000000046 /* EvilTwinView.swift */,
+				A10000000000000000000047 /* AirspaceView.swift */,
+				A10000000000000000000048 /* CompassView.swift */,
+				A10000000000000000000049 /* HotelModeView.swift */,
+				A10000000000000000000050 /* ChannelChartView.swift */,
+				A10000000000000000000051 /* SharedMap.swift */,
+				A10000000000000000000052 /* ObdView.swift */,
+				A10000000000000000000053 /* UltrasonicView.swift */,
+				A10000000000000000000054 /* SiriShortcuts.swift */,
+				A10000000000000000000055 /* OnboardingView.swift */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -275,6 +320,21 @@
 				B10000000000000000000035 /* CameraStore.swift in Sources */,
 				B10000000000000000000036 /* CameraView.swift in Sources */,
 				B10000000000000000000037 /* SweepView.swift in Sources */,
+				B10000000000000000000038 /* DnsAudit.swift in Sources */,
+				B10000000000000000000039 /* NvdLookup.swift in Sources */,
+				B10000000000000000000040 /* ShodanLookup.swift in Sources */,
+				B10000000000000000000041 /* WigleUpload.swift in Sources */,
+				B10000000000000000000042 /* GuidesView.swift in Sources */,
+				B10000000000000000000043 /* EvilTwinView.swift in Sources */,
+				B10000000000000000000044 /* AirspaceView.swift in Sources */,
+				B10000000000000000000045 /* CompassView.swift in Sources */,
+				B10000000000000000000046 /* HotelModeView.swift in Sources */,
+				B10000000000000000000047 /* ChannelChartView.swift in Sources */,
+				B10000000000000000000048 /* SharedMap.swift in Sources */,
+				B10000000000000000000049 /* ObdView.swift in Sources */,
+				B10000000000000000000050 /* UltrasonicView.swift in Sources */,
+				B10000000000000000000051 /* SiriShortcuts.swift in Sources */,
+				B10000000000000000000052 /* OnboardingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

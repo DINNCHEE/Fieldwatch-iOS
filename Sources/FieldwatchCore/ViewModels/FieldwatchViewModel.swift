@@ -25,6 +25,8 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
     @Published public var minRssiThreshold: Int = -100
     @Published public var filterOnlyCoTraveling: Bool = false
     @Published public var filterOnlyIdentified: Bool = false
+    @Published public var filterOnlyBookmarked: Bool = false
+    @Published public var hideFastPairAccountKey: Bool = false
     
     // Hunting target
     @Published public var huntTargetId: String? = nil
@@ -40,11 +42,31 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
     
     private let locationManager = CLLocationManager()
     private var lastTakPublishTimes: [String: Date] = [:]
+    private var lastCoTravelAlertAt: [String: Date] = [:]
+    private var lastTrailAppend: Date = .distantPast
     
     public override init() {
         super.init()
+        checkReboot()
         setupLocation()
         setupRadios()
+    }
+
+    private func checkReboot() {
+        let saved = UserDefaults.standard.double(forKey: "fw_last_uptime")
+        let now = ProcessInfo.processInfo.systemUptime
+        if saved > 0 && saved > now {
+            let count = UserDefaults.standard.integer(forKey: "fw_reboot_count") + 1
+            UserDefaults.standard.set(count, forKey: "fw_reboot_count")
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "fw_last_reboot")
+        }
+        UserDefaults.standard.set(now, forKey: "fw_last_uptime")
+        rebootCount = UserDefaults.standard.integer(forKey: "fw_reboot_count")
+    }
+
+    public var lastRebootDate: Date? {
+        let t = UserDefaults.standard.double(forKey: "fw_last_reboot")
+        return t > 0 ? Date(timeIntervalSince1970: t) : nil
     }
     
     private func setupLocation() {
@@ -82,6 +104,7 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
 
     // MARK: - Sit sessions (Reports)
     @Published public var activeSit: SitSession?
+    @Published public var rebootCount: Int = 0
 
     public func startSit(name: String) {
         if activeSit != nil { endSit() }
@@ -167,12 +190,23 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
             sighting.facts.isConnectable = connectable
         }
         
-        // Location history for Co-Travel tracking
+        // Location history for Co-Travel tracking + sit trail (15 s cadence)
         if let loc = observation.location {
             sighting.location = loc
             sighting.locationHistory.append(loc)
             if sighting.locationHistory.count > 30 {
                 sighting.locationHistory.removeFirst()
+            }
+            if activeSit != nil,
+               observation.timestamp.timeIntervalSince(lastTrailAppend) > 15 {
+                lastTrailAppend = observation.timestamp
+                if var sit = activeSit {
+                    sit.path.append(TrailPoint(lat: loc.latitude, lon: loc.longitude))
+                    if sit.path.count > 2000 {
+                        sit.path.removeFirst(sit.path.count - 2000)
+                    }
+                    activeSit = sit
+                }
             }
         }
         
@@ -211,17 +245,17 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
         }
         sighting.decodedFields = decoded
         
-        // Evaluate Co-travel ("Moving with you" / Tail detection)
+        // Evaluate Co-travel (BLE tags only; Wi-Fi APs never count)
         let wasCoTraveling = sighting.isCoTraveling
-        sighting.isCoTraveling = CoTravelEngine.shared.evaluateCoTraveling(
-            firstSeen: sighting.firstSeen,
-            lastSeen: sighting.lastSeen,
-            locationHistory: sighting.locationHistory
-        )
+        sighting.isCoTraveling = CoTravelEngine.shared.evaluateTag(sighting)
         if sighting.isCoTraveling && !wasCoTraveling {
             coTravelingCount += 1
             coTravelAlert = sighting
-            Alerter.coTravel(sighting)
+            let lastAlert = lastCoTravelAlertAt[id] ?? .distantPast
+            if observation.timestamp.timeIntervalSince(lastAlert) > 24 * 3600 {
+                lastCoTravelAlertAt[id] = observation.timestamp
+                Alerter.coTravel(sighting)
+            }
         }
         
         sightings[id] = sighting
@@ -246,7 +280,13 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
             if filterOnlyCoTraveling && !s.isCoTraveling {
                 return false
             }
+            if filterOnlyBookmarked && !s.isBookmarked {
+                return false
+            }
             if filterOnlyIdentified && (s.fleetName == nil && s.roleHints.isEmpty && s.vendor == nil) {
+                return false
+            }
+            if hideFastPairAccountKey && s.fleetId == FastPair.fleetId && !s.fastPairPairing {
                 return false
             }
             if !searchQuery.isEmpty {

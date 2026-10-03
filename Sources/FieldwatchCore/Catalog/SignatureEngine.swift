@@ -18,7 +18,9 @@ public final class SignatureEngine: @unchecked Sendable {
     
     public init() {
         RadioDb.shared.load()
+        Persistence.shared.pullFleetsFromCloudIfEmpty()
         loadDefaultCatalog()
+        loadCustomFleets()
     }
     
     public func loadCatalog(from url: URL) -> Bool {
@@ -66,7 +68,7 @@ public final class SignatureEngine: @unchecked Sendable {
     public var activeFleets: [Fleet] {
         lock.lock()
         defer { lock.unlock() }
-        return fleets
+        return fleets + customFleets
     }
     
     public func toggleFleet(id: String, enabled: Bool) {
@@ -75,7 +77,44 @@ public final class SignatureEngine: @unchecked Sendable {
         if let idx = fleets.firstIndex(where: { $0.id == id }) {
             fleets[idx].enabled = enabled
         }
+        if let idx = customFleets.firstIndex(where: { $0.id == id }) {
+            customFleets[idx].enabled = enabled
+        }
         Persistence.shared.setFleet(id: id, enabled: enabled)
+        Persistence.shared.pushFleetsToCloud()
+    }
+
+    // MARK: - Custom fleets (user-made, persisted)
+    public private(set) var customFleets: [Fleet] = []
+
+    public func loadCustomFleets() {
+        lock.lock()
+        defer { lock.unlock() }
+        customFleets = Persistence.shared.customFleetList()
+        for i in customFleets.indices where Persistence.shared.hasFleet(id: customFleets[i].id) {
+            customFleets[i].enabled = Persistence.shared.fleetEnabled(id: customFleets[i].id)
+        }
+    }
+
+    public func addCustomFleet(name: String, glob: String) {
+        let fleet = Fleet(
+            id: "custom-\(UUID().uuidString.prefix(8).lowercased())",
+            name: name.isEmpty ? "Özel İmza" : name,
+            enabled: true, matchAny: true, colorIndex: 3,
+            rules: [Rule(kind: "NAME_GLOB", text: glob.isEmpty ? "*" : glob,
+                         companyId: nil, dataPrefixHex: nil, radio: "ANY", enabled: true)]
+        )
+        lock.lock()
+        customFleets.append(fleet)
+        lock.unlock()
+        Persistence.shared.saveCustomFleets(customFleets)
+    }
+
+    public func deleteCustomFleet(id: String) {
+        lock.lock()
+        customFleets.removeAll { $0.id == id }
+        lock.unlock()
+        Persistence.shared.saveCustomFleets(customFleets)
     }
 
     /// Replace stock catalog (update), keeping the user's on/off choices.
@@ -101,7 +140,7 @@ public final class SignatureEngine: @unchecked Sendable {
         facts: RadioFacts
     ) -> (fleetId: String, fleetName: String, colorIndex: Int)? {
         lock.lock()
-        let localFleets = fleets
+        let localFleets = fleets + customFleets
         lock.unlock()
         
         for fleet in localFleets where fleet.enabled {

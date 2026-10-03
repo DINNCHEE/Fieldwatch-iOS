@@ -7,9 +7,38 @@
 //
 
 import SwiftUI
+import CoreNFC
 #if SWIFT_PACKAGE
 import FieldwatchCore
 #endif
+
+final class NfcRoomReader: NSObject, ObservableObject, NFCNDEFReaderSessionDelegate {
+    @Published var lastTag: String?
+    private var session: NFCNDEFReaderSession?
+
+    func scan() {
+        guard NFCNDEFReaderSession.readingAvailable else {
+            lastTag = "Bu cihaz NFC okumuyor."
+            return
+        }
+        session = NFCNDEFReaderSession(delegate: self, queue: nil, invalidateAfterFirstRead: true)
+        session?.alertMessage = "Oda etiketine yaklaştır"
+        session?.begin()
+    }
+
+    func readerSession(_ session: NFCNDEFReaderSession, didDetectNDEFs messages: [NFCNDEFMessage]) {
+        let text = messages.first?.records.compactMap {
+            String(data: $0.payload, encoding: .utf8)
+        }.joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
+        DispatchQueue.main.async {
+            self.lastTag = (text?.isEmpty == false) ? text : "Etiket okundu (boş içerik)"
+        }
+    }
+
+    func readerSession(_ session: NFCNDEFReaderSession, didInvalidateWithError error: Error) {
+        // User cancel is normal; keep last tag.
+    }
+}
 
 public enum SweepTarget: String, CaseIterable, Sendable {
     case cameras = "Kameralar"
@@ -46,6 +75,7 @@ public struct SweepView: View {
     @State private var timer: Timer?
     @State private var showingShare = false
     @State private var shareText = ""
+    @StateObject private var nfc = NfcRoomReader()
 
     public init(viewModel: FieldwatchViewModel) {
         self.viewModel = viewModel
@@ -134,8 +164,18 @@ public struct SweepView: View {
                         showingShare = true
                     }
                     .font(.caption)
+                    Button("NFC Oda Etiketi") {
+                        nfc.scan()
+                    }
+                    .font(.caption)
                 }
                 .padding(.horizontal)
+                if let tag = nfc.lastTag {
+                    Text("Oda: \(tag)")
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                        .padding(.horizontal)
+                }
 
                 List {
                     Section("Şüpheliler (\(matches.count))") {
@@ -174,7 +214,11 @@ public struct SweepView: View {
 
     private func summary() -> String {
         var lines = ["Fieldwatch süpürme özeti", "Hedef: \(target.rawValue)",
-                     "Süre: \(elapsed.isEmpty ? "-" : elapsed)", ""]
+                     "Süre: \(elapsed.isEmpty ? "-" : elapsed)"]
+        if let tag = nfc.lastTag {
+            lines.append("Oda etiketi: \(tag)")
+        }
+        lines.append("")
         if matches.isEmpty {
             lines.append("Şüpheli yayın bulunamadı. (Not: hücresel/GSM böcekler RF ile görünmez.)")
         } else {

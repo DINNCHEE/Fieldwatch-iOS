@@ -10,6 +10,11 @@ import Foundation
 import AudioToolbox
 import AVFoundation
 import UserNotifications
+import MapKit
+import CoreLocation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public struct Alerter: Sendable {
     private static let beepKey = "fw_alert_beep"
@@ -45,7 +50,14 @@ public struct Alerter: Sendable {
     public static func coTravel(_ sighting: Sighting) {
         beep()
         speak("Takip uyarısı: \(sighting.displayName) sizinle birlikte hareket ediyor.")
-        notify(title: "Sizinle hareket eden cihaz", body: sighting.displayName)
+        if let loc = sighting.location {
+            mapNotify(title: "Sizinle hareket eden cihaz",
+                      body: sighting.displayName,
+                      coordinate: CLLocationCoordinate2D(latitude: loc.latitude,
+                                                        longitude: loc.longitude))
+        } else {
+            notify(title: "Sizinle hareket eden cihaz", body: sighting.displayName)
+        }
     }
 
     public static func watched(_ sighting: Sighting) {
@@ -82,5 +94,42 @@ public struct Alerter: Sendable {
         content.sound = .default
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(request)
+    }
+
+    /// Notification with a small map snapshot around the coordinate.
+    public static func mapNotify(title: String, body: String,
+                                 coordinate: CLLocationCoordinate2D) {
+        guard notifyEnabled else { return }
+        Task {
+            let options = MKMapSnapshotter.Options()
+            options.region = MKCoordinateRegion(center: coordinate,
+                                                latitudinalMeters: 600,
+                                                longitudinalMeters: 600)
+            options.size = CGSize(width: 300, height: 200)
+            do {
+                let shot = try await MKMapSnapshotter(options: options).start()
+                #if canImport(UIKit)
+                if let cg = shot.image.cgImage,
+                   let data = UIImage(cgImage: cg).pngData() {
+                    let url = FileManager.default.temporaryDirectory
+                        .appendingPathComponent("fw-\(UUID().uuidString).png")
+                    try? data.write(to: url, options: .atomic)
+                    let content = UNMutableNotificationContent()
+                    content.title = title
+                    content.body = body
+                    content.sound = .default
+                    if let attachment = try? UNNotificationAttachment(
+                        identifier: "map", url: url, options: nil) {
+                        content.attachments = [attachment]
+                    }
+                    let request = UNNotificationRequest(
+                        identifier: UUID().uuidString, content: content, trigger: nil)
+                    UNUserNotificationCenter.current().add(request)
+                    return
+                }
+                #endif
+            } catch {}
+            notify(title: title, body: body)
+        }
     }
 }

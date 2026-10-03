@@ -14,11 +14,20 @@ import FieldwatchUI
 
 @main
 public struct FieldwatchApp: App {
+    @State private var onboarded: Bool =
+        UserDefaults.standard.bool(forKey: "fw_onboarded")
+
     public init() {}
-    
+
     public var body: some Scene {
         WindowGroup {
-            MainContentView()
+            if onboarded {
+                MainContentView()
+            } else {
+                OnboardingView {
+                    onboarded = true
+                }
+            }
         }
     }
 }

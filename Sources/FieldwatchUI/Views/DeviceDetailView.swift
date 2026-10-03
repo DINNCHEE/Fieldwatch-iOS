@@ -97,6 +97,8 @@ public struct DeviceDetailView: View {
     @State private var gattInfo: GattInfo?
     @State private var gattLoading: Bool = false
     @State private var gattFailed: Bool = false
+    @State private var nvdResults: [NvdVuln]?
+    @State private var nvdLoading: Bool = false
     @State private var evidenceImages: [UIImage] = []
     @State private var showingPicker: Bool = false
     
@@ -268,6 +270,55 @@ public struct DeviceDetailView: View {
                 }
                 .onAppear {
                     evidenceImages = EvidenceStore.load(id: sighting.identifier)
+                }
+
+                // NVD firmware CVE lookup
+                Section("Güvenlik Açığı (NVD)") {
+                    if nvdLoading {
+                        Text("Aranıyor…")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else if let vulns = nvdResults {
+                        if vulns.isEmpty {
+                            Text("Kayıtlı açık bulunamadı (veya eşleşme yok).")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        ForEach(vulns.prefix(10)) { vuln in
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack {
+                                    Text(vuln.cveId)
+                                        .font(.system(.caption, design: .monospaced, weight: .bold))
+                                    Spacer()
+                                    if let score = vuln.cvss {
+                                        Text(String(format: "%.1f", score))
+                                            .font(.caption.monospaced())
+                                            .foregroundColor(score >= 7 ? .red : .secondary)
+                                    }
+                                }
+                                Text(vuln.summary)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(3)
+                            }
+                        }
+                    } else {
+                        Button("Bu Cihazda Açık Ara") {
+                            nvdLoading = true
+                            Task {
+                                let query = [sighting.vendor, sighting.fleetName, sighting.name]
+                                    .compactMap { $0 }.joined(separator: " ")
+                                let results = await NvdLookup.search(model: query)
+                                await MainActor.run {
+                                    nvdResults = results ?? []
+                                    nvdLoading = false
+                                }
+                            }
+                        }
+                        Text("Kaynak: NIST NVD (ücretsiz, anahtarsız).")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
 
                 // Hunt & Locate action

@@ -203,6 +203,18 @@ public struct SettingsView: View {
                     }
                 }
                 
+                // Tools hub
+                Section("Araçlar") {
+                    NavigationLink("Ağ Denetimi (evil-twin + DNS)") { EvilTwinView() }
+                    NavigationLink("Hava Sahası (uçaklar)") { AirspaceView(viewModel: viewModel) }
+                    NavigationLink("Pusula (sinyale yön)") { CompassView(viewModel: viewModel) }
+                    NavigationLink("Kanal Doluluk") { ChannelChartView(viewModel: viewModel) }
+                    NavigationLink("Otel Modu") { HotelModeView(viewModel: viewModel) }
+                    NavigationLink("Ultrasonik Tarama") { UltrasonicView() }
+                    NavigationLink("OBD Okuma (kendi aracın)") { ObdView() }
+                    NavigationLink("Güvenlik Rehberleri") { GuidesView() }
+                }
+
                 // Data & Export
                 Section("Data Management") {
                     HStack {
@@ -240,9 +252,15 @@ public struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                     HStack {
+                        Text("Yeniden başlatma")
+                        Spacer()
+                        Text(viewModel.rebootCount > 0 ? "\(viewModel.rebootCount)x" : "yok")
+                            .foregroundColor(viewModel.rebootCount > 0 ? .orange : .secondary)
+                    }
+                    HStack {
                         Text("Version")
                         Spacer()
-                        Text("1.0.7 (Port)")
+                        Text("1.0.8 (Port)")
                             .foregroundColor(.secondary)
                     }
                     HStack {

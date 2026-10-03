@@ -188,6 +188,8 @@ public struct MainContentView: View {
         viewModel.minRssiThreshold > -100 ||
         viewModel.filterOnlyCoTraveling ||
         viewModel.filterOnlyIdentified ||
+        viewModel.filterOnlyBookmarked ||
+        viewModel.hideFastPairAccountKey ||
         !viewModel.searchQuery.isEmpty
     }
 }
@@ -233,15 +235,46 @@ struct FilterSheetView: View {
                 Section("Intelligence Filters") {
                     Toggle("Only Co-Traveling / Stalkers", isOn: $viewModel.filterOnlyCoTraveling)
                     Toggle("Only Identified Fleets", isOn: $viewModel.filterOnlyIdentified)
+                    Toggle("Only Bookmarked", isOn: $viewModel.filterOnlyBookmarked)
+                    Toggle("Hide Fast Pair account-key", isOn: $viewModel.hideFastPairAccountKey)
+                }
+
+                Section("Presets") {
+                    HStack {
+                        presetButton("Tümü") {
+                            resetFilters(on: viewModel)
+                        }
+                        presetButton("Wi-Fi") {
+                            resetFilters(on: viewModel)
+                            viewModel.selectedRadioFilter = .wifi
+                        }
+                        presetButton("BLE") {
+                            resetFilters(on: viewModel)
+                            viewModel.selectedRadioFilter = .ble
+                        }
+                    }
+                    HStack {
+                        presetButton("Güçlü") {
+                            resetFilters(on: viewModel)
+                            viewModel.minRssiThreshold = -70
+                        }
+                        presetButton("Hareketli") {
+                            resetFilters(on: viewModel)
+                            viewModel.filterOnlyCoTraveling = true
+                        }
+                        presetButton("İzlenen") {
+                            resetFilters(on: viewModel)
+                            viewModel.filterOnlyBookmarked = true
+                        }
+                    }
+                    Text("İzlenen: detaydan yıldızladıkların.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 
                 Section {
                     Button("Reset Filters") {
-                        viewModel.searchQuery = ""
-                        viewModel.selectedRadioFilter = nil
-                        viewModel.minRssiThreshold = -100
-                        viewModel.filterOnlyCoTraveling = false
-                        viewModel.filterOnlyIdentified = false
+                        resetFilters(on: viewModel)
                     }
                     .foregroundColor(.red)
                 }
@@ -254,5 +287,24 @@ struct FilterSheetView: View {
                 }
             }
         }
+    }
+
+    private func presetButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .font(.caption)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.accentColor.opacity(0.15))
+            .cornerRadius(8)
+    }
+
+    private func resetFilters(on viewModel: FieldwatchViewModel) {
+        viewModel.searchQuery = ""
+        viewModel.selectedRadioFilter = nil
+        viewModel.minRssiThreshold = -100
+        viewModel.filterOnlyCoTraveling = false
+        viewModel.filterOnlyIdentified = false
+        viewModel.filterOnlyBookmarked = false
+        viewModel.hideFastPairAccountKey = false
     }
 }

@@ -7,6 +7,17 @@
 
 import Foundation
 
+public struct TrailPoint: Codable, Sendable {
+    public var lat: Double
+    public var lon: Double
+    public var alt: Double
+    public var at: Date
+
+    public init(lat: Double, lon: Double, alt: Double = 0, at: Date = Date()) {
+        self.lat = lat; self.lon = lon; self.alt = alt; self.at = at
+    }
+}
+
 public struct SitSession: Codable, Identifiable, Sendable {
     public let id: UUID
     public var name: String
@@ -15,10 +26,12 @@ public struct SitSession: Codable, Identifiable, Sendable {
     public var deviceCount: Int
     public var topDevices: [String]
     public var notes: String?
+    public var path: [TrailPoint] = []
 
     public init(id: UUID = UUID(), name: String, startedAt: Date = Date(),
                 endedAt: Date? = nil, deviceCount: Int = 0,
-                topDevices: [String] = [], notes: String? = nil) {
+                topDevices: [String] = [], notes: String? = nil,
+                path: [TrailPoint] = []) {
         self.id = id
         self.name = name
         self.startedAt = startedAt
@@ -26,6 +39,7 @@ public struct SitSession: Codable, Identifiable, Sendable {
         self.deviceCount = deviceCount
         self.topDevices = topDevices
         self.notes = notes
+        self.path = path
     }
 
     public var durationText: String {
