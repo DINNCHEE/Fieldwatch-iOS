@@ -202,6 +202,9 @@ public final class RadioDb: @unchecked Sendable {
     private struct Cursor {
         let data: Data
         var off: Int = 0
+        /// Bytes left from current position. Every section checks this
+        /// before looping so a corrupt file returns false, never traps.
+        func require(_ n: Int) -> Bool { n >= 0 && off + n <= data.count }
         mutating func u8() -> UInt8 { defer { off += 1 }; return data[off] }
         mutating func u16() -> UInt16 {
             let v = UInt16(data[off]) | (UInt16(data[off + 1]) << 8); off += 2; return v
@@ -244,36 +247,37 @@ public final class RadioDb: @unchecked Sendable {
         malKeys = []; malIdx = []
         // NOTE: packer writes ALL keys first, then ALL indices (not interleaved).
         var n = Int(b.i32())
-        guard n >= 0, n < 100000 else { return false }
+        guard n >= 0, n < 100000, b.require(n * 6) else { return false }
         for _ in 0..<n { malKeys.append(b.u32()) }
         for _ in 0..<n { malIdx.append(Int(b.i16())) }
         guard var q = slice("cid") else { return false }
         n = Int(q.i32())
-        guard n >= 0, n < 100000 else { return false }
+        guard n >= 0, n < 100000, q.require(n * 6) else { return false }
         for _ in 0..<n { cidKeys.append(q.u32()) }
         for _ in 0..<n { cidIdx.append(Int(q.i16())) }
         guard var l = slice("long") else { return false }
         n = Int(l.i32())
-        guard n >= 0, n < 100000 else { return false }
+        guard n >= 0, n < 100000, l.require(n * 10) else { return false }
         for _ in 0..<n { longKeys.append(l.u64()) }
         for _ in 0..<n { longIdx.append(Int(l.i16())) }
         guard var t = slice("btc") else { return false }
         n = Int(t.i32())
-        guard n >= 0, n < 100000 else { return false }
+        guard n >= 0, n < 100000, t.require(n * 4) else { return false }
         for _ in 0..<n { btKeys.append(UInt32(t.u16())) }
         for _ in 0..<n { btIdx.append(Int(t.i16())) }
         guard var a = slice("app") else { return false }
         n = Int(a.i32())
-        guard n >= 0, n < 100000 else { return false }
+        guard n >= 0, n < 100000, a.require(n * 4) else { return false }
         for _ in 0..<n { appKeys.append(UInt32(a.u16())) }
         for _ in 0..<n { appIdx.append(Int(a.i16())) }
         guard var u = slice("uuid") else { return false }
         n = Int(u.i32())
-        guard n >= 0, n < 100000 else { return false }
+        guard n >= 0, n < 100000, u.require(n * 4) else { return false }
         for _ in 0..<n { uuidKeys.append(UInt32(u.u16())) }
         for _ in 0..<n { uuidIdx.append(Int(u.i16())) }
         guard var f = slice("noff") else { return false }
         n = Int(f.i32())
+        guard n >= 0, n < 200000, f.require((n + 1) * 4) else { return false }
         nameCount = n
         nameOff = []
         for _ in 0...n { nameOff.append(Int(f.i32())) }
