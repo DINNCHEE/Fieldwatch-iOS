@@ -147,15 +147,18 @@ public final class LanDiscovery: NSObject, @unchecked Sendable {
     }
 
     private func sockaddrToIP(_ data: Data) -> String? {
-        data.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) -> String? in
+        guard data.count >= MemoryLayout<sockaddr>.size else { return nil }
+        return data.withUnsafeBytes { (ptr: UnsafeRawBufferPointer) -> String? in
             guard let base = ptr.baseAddress else { return nil }
             let sa = base.assumingMemoryBound(to: sockaddr.self).pointee
             if sa.sa_family == sa_family_t(AF_INET) {
+                guard data.count >= MemoryLayout<sockaddr_in>.size else { return nil }
                 var addr = base.assumingMemoryBound(to: sockaddr_in.self).pointee.sin_addr
                 var buf = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
                 guard inet_ntop(AF_INET, &addr, &buf, socklen_t(INET_ADDRSTRLEN)) != nil else { return nil }
                 return String(cString: buf)
             } else if sa.sa_family == sa_family_t(AF_INET6) {
+                guard data.count >= MemoryLayout<sockaddr_in6>.size else { return nil }
                 var addr = base.assumingMemoryBound(to: sockaddr_in6.self).pointee.sin6_addr
                 var buf = [CChar](repeating: 0, count: Int(INET6_ADDRSTRLEN))
                 guard inet_ntop(AF_INET6, &addr, &buf, socklen_t(INET6_ADDRSTRLEN)) != nil else { return nil }
@@ -326,19 +329,21 @@ extension LanDiscovery {
         var mask: UInt32 = 0
         var cursor: UnsafeMutablePointer<ifaddrs>? = first
         while let c = cursor {
-            let ifa = c.pointee
-            if String(cString: ifa.ifa_name) == "en0",
-               ifa.ifa_addr.pointee.sa_family == sa_family_t(AF_INET),
-               ifa.ifa_netmask.pointee.sa_family == sa_family_t(AF_INET) {
-                ip = ifa.ifa_addr.withMemoryRebound(to: sockaddr_in.self, capacity: 1) {
-                    UInt32(littleEndian: $0.pointee.sin_addr.s_addr)
-                }
-                mask = ifa.ifa_netmask.withMemoryRebound(to: sockaddr_in.self, capacity: 1) {
-                    UInt32(littleEndian: $0.pointee.sin_addr.s_addr)
-                }
-                break
+            cursor = c.pointee.ifa_next
+            guard String(cString: c.pointee.ifa_name) == "en0" else { continue }
+            // NOTE: ifa_addr / ifa_netmask can be NULL (VPN, tunnels).
+            // Dereferencing them blindly crashes the app the moment scan starts.
+            guard let addrPtr = c.pointee.ifa_addr,
+                  let maskPtr = c.pointee.ifa_netmask,
+                  addrPtr.pointee.sa_family == sa_family_t(AF_INET),
+                  maskPtr.pointee.sa_family == sa_family_t(AF_INET) else { continue }
+            ip = addrPtr.withMemoryRebound(to: sockaddr_in.self, capacity: 1) {
+                UInt32(littleEndian: $0.pointee.sin_addr.s_addr)
             }
-            cursor = ifa.ifa_next
+            mask = maskPtr.withMemoryRebound(to: sockaddr_in.self, capacity: 1) {
+                UInt32(littleEndian: $0.pointee.sin_addr.s_addr)
+            }
+            break
         }
         guard mask != 0 else { return nil }
         let hostBits = 32 - mask.nonzeroBitCount
