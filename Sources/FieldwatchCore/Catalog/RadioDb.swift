@@ -242,24 +242,36 @@ public final class RadioDb: @unchecked Sendable {
         }
         guard var b = slice("mal") else { return false }
         malKeys = []; malIdx = []
+        // NOTE: packer writes ALL keys first, then ALL indices (not interleaved).
         var n = Int(b.i32())
         guard n >= 0, n < 100000 else { return false }
-        for _ in 0..<n { malKeys.append(b.u32()); malIdx.append(Int(b.i16())) }
+        for _ in 0..<n { malKeys.append(b.u32()) }
+        for _ in 0..<n { malIdx.append(Int(b.i16())) }
         guard var q = slice("cid") else { return false }
         n = Int(q.i32())
-        for _ in 0..<n { cidKeys.append(q.u32()); cidIdx.append(Int(q.i16())) }
+        guard n >= 0, n < 100000 else { return false }
+        for _ in 0..<n { cidKeys.append(q.u32()) }
+        for _ in 0..<n { cidIdx.append(Int(q.i16())) }
         guard var l = slice("long") else { return false }
         n = Int(l.i32())
-        for _ in 0..<n { longKeys.append(l.u64()); longIdx.append(Int(l.i16())) }
+        guard n >= 0, n < 100000 else { return false }
+        for _ in 0..<n { longKeys.append(l.u64()) }
+        for _ in 0..<n { longIdx.append(Int(l.i16())) }
         guard var t = slice("btc") else { return false }
         n = Int(t.i32())
-        for _ in 0..<n { btKeys.append(UInt32(t.u16())); btIdx.append(Int(t.i16())) }
+        guard n >= 0, n < 100000 else { return false }
+        for _ in 0..<n { btKeys.append(UInt32(t.u16())) }
+        for _ in 0..<n { btIdx.append(Int(t.i16())) }
         guard var a = slice("app") else { return false }
         n = Int(a.i32())
-        for _ in 0..<n { appKeys.append(UInt32(a.u16())); appIdx.append(Int(a.i16())) }
+        guard n >= 0, n < 100000 else { return false }
+        for _ in 0..<n { appKeys.append(UInt32(a.u16())) }
+        for _ in 0..<n { appIdx.append(Int(a.i16())) }
         guard var u = slice("uuid") else { return false }
         n = Int(u.i32())
-        for _ in 0..<n { uuidKeys.append(UInt32(u.u16())); uuidIdx.append(Int(u.i16())) }
+        guard n >= 0, n < 100000 else { return false }
+        for _ in 0..<n { uuidKeys.append(UInt32(u.u16())) }
+        for _ in 0..<n { uuidIdx.append(Int(u.i16())) }
         guard var f = slice("noff") else { return false }
         n = Int(f.i32())
         nameCount = n
