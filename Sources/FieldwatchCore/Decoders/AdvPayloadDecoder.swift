@@ -453,7 +453,7 @@ public struct AdvPayloadDecoder: Sendable {
         if dataFlags & 0x04 != 0 { extras.append("Wi-Fi on") }
         if dataFlags & 0x01 != 0 { extras.append("AirPods connected") }
         if dataFlags & 0x20 != 0 { extras.append("Watch locked") }
-        var text = activity.prefix(1).uppercased() + activity.dropFirst()
+        var text = activity.prefix(1).uppercased() + String(activity.dropFirst())
         if !extras.isEmpty { text += ". " + extras.joined(separator: "; ") }
         text += "."
         return [DecodedField(label: "What the Apple device is doing", value: text)]

@@ -265,7 +265,7 @@ public final class RadioDb: @unchecked Sendable {
         nameCount = n
         nameOff = []
         for _ in 0...n { nameOff.append(Int(f.i32())) }
-        guard let nstrAt = sections["nstr"], let last = nameOff.last(),
+        guard let nstrAt = sections["nstr"], let last = nameOff.last,
               nstrAt >= 0, nstrAt + last <= bytes.count else { return false }
         nameBlob = bytes[nstrAt..<(nstrAt + last)]
         return true

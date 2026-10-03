@@ -147,7 +147,7 @@ public struct DeviceExplain: Sendable {
         return extra
     }
 
-    static func uuidHints(uuids: [String]) -> [ExHint] {
+    private static func uuidHints(uuids: [String]) -> [ExHint] {
         var out: [ExHint] = []
         for uuid in uuids {
             guard let id = uuid16(uuid) else { continue }
@@ -170,7 +170,7 @@ public struct DeviceExplain: Sendable {
         return out
     }
 
-    static func signatureHints(names: [String]) -> [ExHint] {
+    private static func signatureHints(names: [String]) -> [ExHint] {
         var out: [ExHint] = []
         for raw in names {
             if isGenericSignatureName(raw) { continue }
@@ -221,7 +221,7 @@ public struct DeviceExplain: Sendable {
             n.caseInsensitiveCompare("Unknown Fleet") == .orderedSame
     }
 
-    static func wifiHints(sighting: Sighting, signatureNames: [String]) -> [ExHint] {
+    private static func wifiHints(sighting: Sighting, signatureNames: [String]) -> [ExHint] {
         let name = (sighting.name ?? "").lowercased()
         let specific = signatureNames.contains { !isGenericSignatureName($0) }
         var out: [ExHint] = []
