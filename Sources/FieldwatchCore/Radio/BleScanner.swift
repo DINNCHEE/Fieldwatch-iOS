@@ -142,6 +142,7 @@ public final class BleScanner: NSObject, CBCentralManagerDelegate, @unchecked Se
         let identifier = peripheral.identifier.uuidString
         let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String
         let txPower = advertisementData[CBAdvertisementDataTxPowerLevelKey] as? Int
+        let connectable = (advertisementData[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue
         
         var mfgRecords: [MfgRecord] = []
         if let mfgData = advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data, mfgData.count >= 2 {
@@ -169,7 +170,8 @@ public final class BleScanner: NSObject, CBCentralManagerDelegate, @unchecked Se
             mfgRecords: mfgRecords,
             serviceDataRecords: serviceDataRecords,
             serviceUuids: serviceUuids,
-            txPower: txPower
+            txPower: txPower,
+            isConnectable: connectable
         )
         
         let observation = Observation(

@@ -159,6 +159,9 @@ public final class FieldwatchViewModel: NSObject, ObservableObject, CLLocationMa
         if observation.facts.vendorOui != nil {
             sighting.facts.vendorOui = observation.facts.vendorOui
         }
+        if let connectable = observation.facts.isConnectable {
+            sighting.facts.isConnectable = connectable
+        }
         
         // Location history for Co-Travel tracking
         if let loc = observation.location {

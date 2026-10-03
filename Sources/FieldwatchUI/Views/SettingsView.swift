@@ -19,6 +19,10 @@ public struct SettingsView: View {
     @State private var takEnabled: Bool = TakPublisher.shared.isEnabled
     @State private var wifiMode: WifiScanner.ScanMode = WifiScanner.shared.activeMode
     @State private var companionPort: String = String(WifiScanner.shared.companionPort)
+    @State private var wigleName: String = ""
+    @State private var wigleToken: String = ""
+    @State private var wigleSaved: Bool = WigleLookup.hasCredentials
+    @State private var catalogStatus: String = ""
     @State private var showingExportSheet = false
     @State private var exportText = ""
     
@@ -103,6 +107,75 @@ public struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
 
+                // Wigle lookup (BYOK)
+                Section("Wigle Arama (BSSID)") {
+                    HStack {
+                        Text("API Name")
+                        Spacer()
+                        TextField("wigle.net/account", text: $wigleName)
+                            .multilineTextAlignment(.trailing)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                    }
+                    HStack {
+                        Text("API Token")
+                        Spacer()
+                        SecureField("Token", text: $wigleToken)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    HStack {
+                        Button("Kaydet") {
+                            if WigleLookup.saveCredentials(
+                                name: wigleName.trimmingCharacters(in: .whitespaces),
+                                token: wigleToken.trimmingCharacters(in: .whitespaces)) {
+                                wigleSaved = true
+                                wigleToken = ""
+                            }
+                        }
+                        Spacer()
+                        Button("Temizle", role: .destructive) {
+                            WigleLookup.clearCredentials()
+                            wigleName = ""
+                            wigleToken = ""
+                            wigleSaved = false
+                        }
+                    }
+                    Text(wigleSaved ? "Anahtar kayıtlı ✓" : "Kayıtlı anahtar yok.")
+                        .font(.caption)
+                        .foregroundColor(wigleSaved ? .green : .secondary)
+                    Text("Ücretsiz hesap: wigle.net → Account. Anahtar cihazdaki kilitli kasada durur, kimseyle paylaşılmaz. Veriler © WiGLE.net, tekil sorgu.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .onAppear {
+                    if let saved = Keychain.load(account: WigleLookup.nameAccount) {
+                        wigleName = saved
+                    }
+                }
+
+                // Signature catalog update
+                Section("İmza Kataloğu") {
+                    HStack {
+                        Text("Sürüm")
+                        Spacer()
+                        Text("v\(SignatureEngine.shared.catalogVersion)")
+                            .font(.caption.monospaced())
+                            .foregroundColor(.secondary)
+                    }
+                    Button("GitHub'dan Güncelle") {
+                        catalogStatus = "İndiriliyor…"
+                        Task {
+                            let msg = await CatalogUpdate.checkAndApply()
+                            await MainActor.run { catalogStatus = msg }
+                        }
+                    }
+                    if !catalogStatus.isEmpty {
+                        Text(catalogStatus)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
                 // TAK / Cursor on Target Integration
                 Section("ATAK / iTAK Integration (Cursor on Target)") {
                     Toggle("Enable CoT Broadcast", isOn: $takEnabled)
@@ -169,7 +242,7 @@ public struct SettingsView: View {
                     HStack {
                         Text("Version")
                         Spacer()
-                        Text("1.0.2 (Port)")
+                        Text("1.0.4 (Port)")
                             .foregroundColor(.secondary)
                     }
                     HStack {

@@ -23,6 +23,9 @@ public struct DeviceDetailView: View {
     @State private var bookmarked: Bool = false
     @State private var alertOn: Bool = false
     @State private var copied: Bool = false
+    @State private var wigleResult: WigleResult?
+    @State private var wigleError: String?
+    @State private var wigleLoading: Bool = false
     
     public init(sighting: Sighting, viewModel: FieldwatchViewModel) {
         self.sighting = sighting
@@ -159,6 +162,65 @@ public struct DeviceDetailView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+
+                    Section("Wigle Veritabanı") {
+                        if !WigleLookup.hasCredentials {
+                            Text("Bilinmeyen ağı sorgulamak için Ayarlar > Wigle Arama'ya ücretsiz API anahtarını gir (wigle.net/account). Veriler © WiGLE.net.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Button(wigleLoading ? "Aranıyor…" : "Wigle'da Ara (BSSID)") {
+                            lookupWigle()
+                        }
+                        .disabled(wigleLoading || !WigleLookup.hasCredentials)
+                        if let r = wigleResult {
+                            if let coords = r.coordinateText {
+                                HStack {
+                                    Text("Tahmini konum")
+                                    Spacer()
+                                    Text(coords).font(.caption.monospaced())
+                                }
+                                if let lat = r.latitude, let lon = r.longitude,
+                                   let url = URL(string: "http://maps.apple.com/?ll=\(lat),\(lon)") {
+                                    Button {
+                                        UIApplication.shared.open(url)
+                                    } label: {
+                                        Text("Haritada Aç")
+                                    }
+                                }
+                            }
+                            if let city = r.city {
+                                HStack {
+                                    Text("Şehir")
+                                    Spacer()
+                                    Text([city, r.region, r.country].compactMap { $0 }.joined(separator: " / "))
+                                        .font(.caption)
+                                }
+                            }
+                            if let enc = r.encryption {
+                                HStack {
+                                    Text("Şifreleme")
+                                    Spacer()
+                                    Text(enc).font(.caption.monospaced())
+                                }
+                            }
+                            if let first = r.firstSeen {
+                                HStack {
+                                    Text("İlk görülme")
+                                    Spacer()
+                                    Text(first).font(.caption.monospaced())
+                                }
+                            }
+                        }
+                        if let e = wigleError {
+                            Text(e)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                        Text("Kaynak: WiGLE.net (kullanıcının kendi anahtarı, tekil sorgu).")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 // Role Hints
@@ -208,6 +270,14 @@ public struct DeviceDetailView: View {
                         Spacer()
                         Text("\(sighting.maxRssi) dBm")
                             .font(.system(.body, design: .monospaced))
+                    }
+                    if let connectable = sighting.facts.isConnectable {
+                        HStack {
+                            Text("Bağlanabilir (BLE)")
+                            Spacer()
+                            Text(connectable ? "Evet" : "Hayır")
+                                .font(.system(.body, design: .monospaced))
+                        }
                     }
                     HStack {
                         Text("Observed Packets")
@@ -290,5 +360,36 @@ public struct DeviceDetailView: View {
             ))
         }
         if alertOn { Alerter.requestNotificationPermission() }
+    }
+
+    private func lookupWigle() {
+        wigleError = nil
+        wigleResult = nil
+        wigleLoading = true
+        Task {
+            do {
+                let result = try await WigleLookup.search(bssid: sighting.identifier)
+                await MainActor.run {
+                    wigleResult = result
+                    wigleLoading = false
+                }
+            } catch let error as WigleError {
+                await MainActor.run {
+                    switch error {
+                    case .noCredentials: wigleError = "Önce Ayarlar'a API anahtarı gir."
+                    case .rateLimited: wigleError = "Günlük sorgu limiti doldu, yarın dene."
+                    case .notFound: wigleError = "Bu BSSID Wigle'da yok."
+                    case .network(let msg): wigleError = "Ağ hatası: \(msg)"
+                    case .decoding: wigleError = "Yanıt çözümlenemedi."
+                    }
+                    wigleLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    wigleError = error.localizedDescription
+                    wigleLoading = false
+                }
+            }
+        }
     }
 }

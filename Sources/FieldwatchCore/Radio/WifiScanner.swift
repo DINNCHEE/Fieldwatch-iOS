@@ -180,12 +180,30 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
     }
 
     private func handleCompanionData(_ data: Data) {
-        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let bssid = obj["bssid"] as? String, !bssid.isEmpty else { return }
-        let ssid = obj["ssid"] as? String
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        let type = (obj["type"] as? String)?.lowercased() ?? "wifi"
         let rssi = (obj["rssi"] as? Int) ?? -80
         let channel = obj["channel"] as? Int
-        ingestCompanionPacket(bssid: bssid, ssid: ssid, rssi: rssi, channel: channel, vendorOui: nil)
+        switch type {
+        case "ble":
+            guard let mac = (obj["mac"] as? String) ?? (obj["bssid"] as? String),
+                  !mac.isEmpty else { return }
+            let name = (obj["name"] as? String) ?? (obj["ssid"] as? String)
+            ingestCompanionPacket(bssid: mac, ssid: name, rssi: rssi,
+                                  channel: channel, vendorOui: nil, kind: .ble)
+        case "station":
+            guard let sta = obj["sta"] as? String, !sta.isEmpty else { return }
+            let ap = obj["ap"] as? String
+            let label = ap.map { "Client @ \($0)" }
+            ingestCompanionPacket(bssid: sta, ssid: label, rssi: rssi,
+                                  channel: channel, vendorOui: nil, kind: .wifi)
+        case "status":
+            break // Heartbeat (mode/uptime/counts); nothing to ingest.
+        default: // "wifi" + legacy flat
+            guard let bssid = obj["bssid"] as? String, !bssid.isEmpty else { return }
+            ingestCompanionPacket(bssid: bssid, ssid: obj["ssid"] as? String,
+                                  rssi: rssi, channel: channel, vendorOui: nil, kind: .wifi)
+        }
     }
     // MARK: - Public Mode: Connected Network Details
     private func performPublicConnectedScan() {
@@ -292,18 +310,21 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
         }
     }
     
-    // MARK: - Ingestion from External Companion Hardware (ESP32 Marauder / Bridge)
+    // MARK: - Ingestion from External Companion Hardware (ESP32 bridge)
+    // v1 flat: {"bssid":"..","ssid":"..","rssi":-70,"channel":6}
+    // v2 typed: {"v":1,"type":"wifi|ble|station|status","ssid|name","bssid|mac|sta","ap","rssi","channel","seq","t"}
     public func ingestCompanionPacket(
         bssid: String,
         ssid: String?,
         rssi: Int,
         channel: Int?,
-        vendorOui: String?
+        vendorOui: String?,
+        kind: RadioKind = .wifi
     ) {
-        let facts = RadioFacts(vendorOui: vendorOui ?? extractOui(from: bssid))
+        let facts = RadioFacts(vendorOui: kind == .wifi ? (vendorOui ?? extractOui(from: bssid)) : nil)
         let observation = Observation(
             timestamp: Date(),
-            kind: .wifi,
+            kind: kind,
             identifier: bssid,
             name: ssid,
             rssi: rssi,

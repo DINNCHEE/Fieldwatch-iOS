@@ -47,9 +47,62 @@ public struct AdvPayloadDecoder: Sendable {
         }
     }
 
+    // MARK: - Spam / flood signatures (Wall-of-Flippers style prefixes, _ = wildcard)
+    // Full hex = company ID (4 hex) + manufacturer payload, or service UUID + data.
+    private static let spamTable: [(pattern: String, label: String, weight: Int)] = [
+        ("4C000719010_2055", "AppleJuice popup-close spam", 10),
+        ("4C000F05C00", "Apple action-modal spam", 10),
+        ("4C00071907", "Apple connect spam", 9),
+        ("4C0004042A0000000F05C1__604C950", "Apple setup spam", 10),
+        ("2CFE", "SwiftPair / Android Nearby spam", 9),
+        ("750042098102141503210109____01_", "Samsung Buds spam", 9),
+        ("7500010002000101FF000043", "Samsung Watch spam", 9),
+        ("0600030080", "Windows Swift Pair spam", 9),
+        ("00001812", "HID flood spam", 8),
+        ("FF006DB643CE97FE427C", "LoveSpouse spam", 9),
+        ("00003081", "Flipper Zero Black spam", 8),
+        ("00003082", "Flipper Zero White spam", 8),
+        ("00003083", "Flipper Zero Transparent spam", 8),
+    ]
+
+    private static func matchesSpam(pattern: String, hex: String) -> Bool {
+        guard hex.count >= pattern.count else { return false }
+        let h = hex.uppercased()
+        let p = pattern.uppercased()
+        for (pc, hc) in zip(p, h) {
+            if pc == "_" { continue }
+            if pc != hc { return false }
+        }
+        return true
+    }
+
+    public static func spamHints(mfgFullHex: [String], serviceFullHex: [String]) -> [RoleHint] {
+        var out: [RoleHint] = []
+        let all = mfgFullHex + serviceFullHex
+        for (pattern, label, weight) in spamTable {
+            for hex in all where matchesSpam(pattern: pattern, hex: hex) {
+                out.append(RoleHint(bucket: "spam", label: label,
+                    reason: "Known spam / flood advertisement signature.", weight: weight))
+                break
+            }
+        }
+        return out
+    }
+
     // MARK: - Role Hints & Device Profiling
     public static func roleHints(for sighting: Sighting) -> [RoleHint] {
         var hints: [RoleHint] = []
+
+        // 0. Spam / flood check first (highest confidence nuisance)
+        let mfgFull = sighting.facts.mfgRecords.map {
+            String(format: "%04X", $0.companyId) + $0.dataHex
+        }
+        let svcFull = sighting.facts.serviceDataRecords.map {
+            $0.uuid.replacingOccurrences(of: "-", with: "") + $0.dataHex
+        } + sighting.facts.serviceUuids.map {
+            $0.replacingOccurrences(of: "-", with: "")
+        }
+        hints += spamHints(mfgFullHex: mfgFull, serviceFullHex: svcFull)
 
         for rec in sighting.facts.mfgRecords where rec.companyId == 0x004C {
             guard let data = Data(hexString: rec.dataHex) else { continue }

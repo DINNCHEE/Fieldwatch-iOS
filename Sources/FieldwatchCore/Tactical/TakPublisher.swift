@@ -83,7 +83,8 @@ public final class TakPublisher: @unchecked Sendable {
         
         let uid = "Fieldwatch.\(sighting.kind.rawValue).\(sighting.identifier.replacingOccurrences(of: ":", with: ""))"
         let callsign = sighting.name ?? sighting.fleetName ?? "\(sighting.kind.rawValue) \(sighting.identifier.prefix(8))"
-        let cotType = sighting.isCoTraveling ? "a-u-G-U-C-I" : "a-f-G-E-V-R" // Unknown / Neutral RF sensor
+        let isDrone = sighting.roleHints.contains { $0.bucket == "drone" }
+        let cotType = isDrone ? "a-u-A" : (sighting.isCoTraveling ? "a-u-G" : (sighting.kind == .wifi ? "a-f-G" : "a-f-S"))
         
         let remarks = "Fieldwatch Detection: \(sighting.kind.rawValue) [\(sighting.identifier)] RSSI: \(sighting.lastRssi) dBm. Fleet: \(sighting.fleetName ?? "None"). Hints: \(sighting.roleHints.first?.label ?? "None")"
         

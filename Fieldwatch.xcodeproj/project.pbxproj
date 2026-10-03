@@ -36,6 +36,9 @@
 		B10000000000000000000029 /* Alerter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000032 /* Alerter.swift */; };
 		B10000000000000000000030 /* CategoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000033 /* CategoryView.swift */; };
 		B10000000000000000000031 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000034 /* ReportsView.swift */; };
+		B10000000000000000000032 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000035 /* Keychain.swift */; };
+		B10000000000000000000033 /* WigleLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000036 /* WigleLookup.swift */; };
+		B10000000000000000000034 /* CatalogUpdate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000037 /* CatalogUpdate.swift */; };
 		B10000000000000000000017 /* fieldwatch-signatures-v2.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* fieldwatch-signatures-v2.json */; };
 		B10000000000000000000018 /* radiodb.bin in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* radiodb.bin */; };
 /* End PBXBuildFile section */
@@ -70,6 +73,9 @@
 		A10000000000000000000032 /* Alerter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Alert/Alerter.swift"; sourceTree = "<group>"; };
 		A10000000000000000000033 /* CategoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/CategoryView.swift"; sourceTree = "<group>"; };
 		A10000000000000000000034 /* ReportsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/ReportsView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000035 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Data/Keychain.swift"; sourceTree = "<group>"; };
+		A10000000000000000000036 /* WigleLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Data/WigleLookup.swift"; sourceTree = "<group>"; };
+		A10000000000000000000037 /* CatalogUpdate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Data/CatalogUpdate.swift"; sourceTree = "<group>"; };
 		A10000000000000000000017 /* fieldwatch-signatures-v2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/fieldwatch-signatures-v2.json"; sourceTree = "<group>"; };
 		A10000000000000000000018 /* radiodb.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = "Resources/radiodb.bin"; sourceTree = "<group>"; };
 		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -131,6 +137,9 @@
 				A10000000000000000000032 /* Alerter.swift */,
 				A10000000000000000000033 /* CategoryView.swift */,
 				A10000000000000000000034 /* ReportsView.swift */,
+				A10000000000000000000035 /* Keychain.swift */,
+				A10000000000000000000036 /* WigleLookup.swift */,
+				A10000000000000000000037 /* CatalogUpdate.swift */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -251,6 +260,9 @@
 				B10000000000000000000029 /* Alerter.swift in Sources */,
 				B10000000000000000000030 /* CategoryView.swift in Sources */,
 				B10000000000000000000031 /* ReportsView.swift in Sources */,
+				B10000000000000000000032 /* Keychain.swift in Sources */,
+				B10000000000000000000033 /* WigleLookup.swift in Sources */,
+				B10000000000000000000034 /* CatalogUpdate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

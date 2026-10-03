@@ -14,6 +14,7 @@ public final class SignatureEngine: @unchecked Sendable {
     private var catalog: FleetCatalog?
     private var fleets: [Fleet] = []
     private let lock = NSLock()
+    public private(set) var catalogVersion: Int = 0
     
     public init() {
         RadioDb.shared.load()
@@ -28,9 +29,8 @@ public final class SignatureEngine: @unchecked Sendable {
             lock.lock()
             self.catalog = parsed
             self.fleets = parsed.fleets
-            for i in self.fleets.indices where Persistence.shared.hasFleet(id: self.fleets[i].id) {
-                self.fleets[i].enabled = Persistence.shared.fleetEnabled(id: self.fleets[i].id)
-            }
+            self.catalogVersion = parsed.catalogVersion
+            self.applyPersistedLocked()
             lock.unlock()
             return true
         } catch {
@@ -76,6 +76,21 @@ public final class SignatureEngine: @unchecked Sendable {
             fleets[idx].enabled = enabled
         }
         Persistence.shared.setFleet(id: id, enabled: enabled)
+    }
+
+    /// Replace stock catalog (update), keeping the user's on/off choices.
+    public func replaceStock(fleets newFleets: [Fleet], version: Int) {
+        lock.lock()
+        defer { lock.unlock() }
+        self.fleets = newFleets
+        self.catalogVersion = version
+        applyPersistedLocked()
+    }
+
+    private func applyPersistedLocked() {
+        for i in fleets.indices where Persistence.shared.hasFleet(id: fleets[i].id) {
+            fleets[i].enabled = Persistence.shared.fleetEnabled(id: fleets[i].id)
+        }
     }
     
     // MARK: - Matching Logic

@@ -159,7 +159,8 @@ public struct RadioFacts: Codable, Sendable {
     public var txPower: Int?
     public var vendorOui: String?
     public var openDroneIdPayload: String?
-    
+    public var isConnectable: Bool?
+
     public init(
         mfgRecords: [MfgRecord] = [],
         serviceDataRecords: [ServiceDataRecord] = [],
@@ -167,7 +168,8 @@ public struct RadioFacts: Codable, Sendable {
         flags: Int? = nil,
         txPower: Int? = nil,
         vendorOui: String? = nil,
-        openDroneIdPayload: String? = nil
+        openDroneIdPayload: String? = nil,
+        isConnectable: Bool? = nil
     ) {
         self.mfgRecords = mfgRecords
         self.serviceDataRecords = serviceDataRecords
@@ -176,6 +178,7 @@ public struct RadioFacts: Codable, Sendable {
         self.txPower = txPower
         self.vendorOui = vendorOui
         self.openDroneIdPayload = openDroneIdPayload
+        self.isConnectable = isConnectable
     }
 }
 
