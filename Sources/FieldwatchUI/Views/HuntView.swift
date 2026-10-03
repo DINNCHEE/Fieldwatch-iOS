@@ -54,7 +54,8 @@ public struct HuntView: View {
                     }
                     Spacer()
                     Text("PROXIMITY HUNT")
-                        .font(.system(.headline, design: .monospaced, weight: .bold))
+                        .font(.system(.headline, design: .monospaced))
+                        .fontWeight(.bold)
                         .foregroundColor(.green)
                     Spacer()
                     // Balance spacer
@@ -67,7 +68,8 @@ public struct HuntView: View {
                 // Target Information
                 VStack(spacing: 4) {
                     Text(liveSighting.name ?? liveSighting.fleetName ?? "Unknown Device")
-                        .font(.system(.title2, design: .monospaced, weight: .heavy))
+                        .font(.system(.title2, design: .monospaced))
+                        .fontWeight(.heavy)
                         .foregroundColor(.white)
                     Text(liveSighting.identifier)
                         .font(.system(.caption, design: .monospaced))
@@ -108,7 +110,8 @@ public struct HuntView: View {
                             .font(.system(size: 56, weight: .heavy, design: .monospaced))
                             .foregroundColor(huntColor)
                         Text("dBm")
-                            .font(.system(.caption, design: .monospaced, weight: .bold))
+                            .font(.system(.caption, design: .monospaced))
+                            .fontWeight(.bold)
                             .foregroundColor(.gray)
                     }
                 }
@@ -118,7 +121,8 @@ public struct HuntView: View {
                 // Distance Approximation
                 VStack(spacing: 8) {
                     Text(distanceEstimateText)
-                        .font(.system(.title3, design: .monospaced, weight: .bold))
+                        .font(.system(.title3, design: .monospaced))
+                        .fontWeight(.bold)
                         .foregroundColor(.white)
                     Text("Signal strength updates continuously via CoreBluetooth")
                         .font(.caption2)

@@ -135,7 +135,7 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
             return
         }
         
-        typealias WiFiManagerClientCreateFunc = @convention(c) (CFAllocatorRef?, Int) -> UnsafeMutableRawPointer?
+        typealias WiFiManagerClientCreateFunc = @convention(c) (CFAllocator?, Int) -> UnsafeMutableRawPointer?
         typealias WiFiManagerClientCopyDevicesFunc = @convention(c) (UnsafeMutableRawPointer?) -> CFArray?
         
         guard let createSym = dlsym(handle, "WiFiManagerClientCreate"),
@@ -164,7 +164,7 @@ public final class WifiScanner: NSObject, @unchecked Sendable {
         
         if let scanSym = dlsym(handle, "WiFiDeviceClientScanAsync") {
             let scanAsync = unsafeBitCast(scanSym, to: WiFiDeviceClientScanAsyncFunc.self)
-            scanAsync(device, nil, { [weak self] _, networks, error in
+            _ = scanAsync(device, nil, { [weak self] _, networks, error in
                 guard let self = self, error == 0, let networkList = networks as? [AnyObject] else { return }
                 self.parseMobileWiFiNetworks(networkList)
             }, nil)

@@ -23,7 +23,7 @@ public final class SignatureEngine: @unchecked Sendable {
         do {
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
-            let parsed = try decoder.decode(FleetCatalog.self, data: data)
+            let parsed = try decoder.decode(FleetCatalog.self, from: data)
             lock.lock()
             self.catalog = parsed
             self.fleets = parsed.fleets
@@ -125,7 +125,7 @@ public final class SignatureEngine: @unchecked Sendable {
             
         case "OUI":
             guard let prefix = rule.text?.replacingOccurrences(of: ":", with: "").uppercased() else { return false }
-            let cleanMac = macOrId.replacingOccurrences(of: ":", with: "").replacingOccurrences(of: "-", "").uppercased()
+            let cleanMac = macOrId.replacingOccurrences(of: ":", with: "").replacingOccurrences(of: "-", with: "").uppercased()
             return cleanMac.hasPrefix(prefix)
             
         case "MFG":

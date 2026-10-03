@@ -30,7 +30,7 @@ public struct AdvPayloadDecoder: Sendable {
     // MARK: - Decoded Service Data Payload
     public static func decodeService(record: ServiceDataRecord) -> [DecodedField] {
         guard let data = Data(hexString: record.dataHex) else { return [] }
-        let shortUuid = record.uuid.replacingOccurrences(of: "-", "").uppercased()
+        let shortUuid = record.uuid.replacingOccurrences(of: "-", with: "").uppercased()
         
         if shortUuid.contains("FE2C") {
             return decodeFastPair(data: data)
@@ -243,8 +243,11 @@ public struct AdvPayloadDecoder: Sendable {
         for byte in data.dropFirst() {
             if byte < expansions.count {
                 url += expansions[Int(byte)]
-            } else if let scalar = UnicodeScalar(byte), CharacterSet.alphanumerics.contains(scalar) || byte == 0x2D || byte == 0x2E {
-                url.append(Character(scalar))
+            } else {
+                let scalar = UnicodeScalar(byte)
+                if CharacterSet.alphanumerics.contains(scalar) || byte == 0x2D || byte == 0x2E {
+                    url.append(Character(scalar))
+                }
             }
         }
         return url

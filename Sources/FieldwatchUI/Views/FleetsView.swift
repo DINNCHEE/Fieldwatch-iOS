@@ -31,7 +31,8 @@ public struct FleetsView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(fleet.name)
-                                    .font(.system(.body, weight: .semibold))
+                                    .font(.system(.body))
+                                    .fontWeight(.semibold)
                                 Text("\(fleet.rules.count) signature rules (\(fleet.matchAny ? "Match Any" : "Match All"))")
                                     .font(.caption)
                                     .foregroundColor(.secondary)

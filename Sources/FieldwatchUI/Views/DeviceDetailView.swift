@@ -31,7 +31,8 @@ public struct DeviceDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text(sighting.name ?? sighting.fleetName ?? "Unknown Device")
-                                .font(.system(.title2, design: .monospaced, weight: .bold))
+                                .font(.system(.title2, design: .monospaced))
+                                .fontWeight(.bold)
                             Spacer()
                             Text(sighting.kind.label)
                                 .font(.caption.bold())
@@ -86,7 +87,8 @@ public struct DeviceDetailView: View {
                         ForEach(sighting.roleHints, id: \.self) { hint in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(hint.label)
-                                    .font(.system(.subheadline, weight: .bold))
+                                    .font(.system(.subheadline))
+                                    .fontWeight(.bold)
                                 Text(hint.reason)
                                     .font(.system(.caption))
                                     .foregroundColor(.secondary)
@@ -101,7 +103,8 @@ public struct DeviceDetailView: View {
                         ForEach(sighting.decodedFields, id: \.self) { field in
                             HStack {
                                 Text(field.label)
-                                    .font(.system(.caption, weight: .semibold))
+                                    .font(.system(.caption))
+                                    .fontWeight(.semibold)
                                     .foregroundColor(.secondary)
                                 Spacer()
                                 Text(field.value)
@@ -117,7 +120,8 @@ public struct DeviceDetailView: View {
                         Text("Current RSSI")
                         Spacer()
                         Text("\(sighting.lastRssi) dBm")
-                            .font(.system(.body, design: .monospaced, weight: .bold))
+                            .font(.system(.body, design: .monospaced))
+                            .fontWeight(.bold)
                     }
                     HStack {
                         Text("Peak RSSI")
@@ -151,7 +155,7 @@ public struct DeviceDetailView: View {
                         ForEach(sighting.facts.mfgRecords, id: \.self) { mfg in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Company ID: 0x\(String(format: "%04X", mfg.companyId))")
-                                    .font(.system(.caption, weight: .bold, design: .monospaced))
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
                                 Text(mfg.dataHex)
                                     .font(.system(size: 10, design: .monospaced))
                                     .foregroundColor(.secondary)

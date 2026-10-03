@@ -41,14 +41,16 @@ public struct LiveListView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text(sighting.name ?? sighting.fleetName ?? "Unknown Device")
-                                    .font(.system(.subheadline, design: .monospaced, weight: .bold))
+                                    .font(.system(.subheadline, design: .monospaced))
+                                    .fontWeight(.bold)
                                     .foregroundColor(.primary)
                                     .lineLimit(1)
                                 
                                 Spacer()
                                 
                                 Text("\(sighting.lastRssi) dBm")
-                                    .font(.system(.caption, design: .monospaced, weight: .semibold))
+                                    .font(.system(.caption, design: .monospaced))
+                                    .fontWeight(.semibold)
                                     .foregroundColor(rssiColor(sighting.lastRssi))
                             }
                             
