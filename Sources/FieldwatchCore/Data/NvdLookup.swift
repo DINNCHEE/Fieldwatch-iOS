@@ -73,7 +73,9 @@ public struct NvdLookup: Sendable {
         guard let url = parts.url,
               let data = await get(url),
               let decoded = try? JSONDecoder().decode(CpeResponse.self, from: data),
-              let cpeName = decoded.products?.first??.cpe?.cpeName else { return nil }
+              let products = decoded.products,
+              let firstProduct = products.first,
+              let cpeName = firstProduct.cpe?.cpeName else { return nil }
         guard var cveParts = URLComponents(string: "https://services.nvd.nist.gov/rest/json/cves/2.0") else { return nil }
         cveParts.queryItems = [URLQueryItem(name: "cpeName", value: cpeName),
                                URLQueryItem(name: "resultsPerPage", value: "20")]
@@ -84,8 +86,14 @@ public struct NvdLookup: Sendable {
             guard let detail = entry.cve, let id = detail.id else { return nil }
             let summary = detail.descriptions?.first(where: { $0.lang == "en" })?.value
                 ?? detail.descriptions?.first?.value ?? ""
-            let score = detail.metrics?.cvssMetricV31?.first??.cvssData?.baseScore
-                ?? detail.metrics?.cvssMetricV30?.first??.cvssData?.baseScore
+            var score: Double?
+            if let arr = detail.metrics?.cvssMetricV31, let first = arr.first {
+                score = first.cvssData?.baseScore
+            }
+            if score == nil,
+               let arr = detail.metrics?.cvssMetricV30, let first = arr.first {
+                score = first.cvssData?.baseScore
+            }
             return NvdVuln(cveId: id, summary: summary, cvss: score)
         }
     }

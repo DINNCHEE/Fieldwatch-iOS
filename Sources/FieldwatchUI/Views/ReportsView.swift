@@ -8,6 +8,7 @@
 import SwiftUI
 import UIKit
 import CoreImage
+import CoreLocation
 #if SWIFT_PACKAGE
 import FieldwatchCore
 #endif

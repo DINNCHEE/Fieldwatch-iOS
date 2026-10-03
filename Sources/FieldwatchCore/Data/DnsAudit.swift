@@ -21,7 +21,7 @@ public struct DnsAudit: Sendable {
     public static func systemResolve(host: String) -> [String] {
         var hints = addrinfo()
         hints.ai_family = AF_INET
-        hints.ai_socktype = Int32(SOCK_STREAM.rawValue)
+        hints.ai_socktype = SOCK_STREAM
         var result: UnsafeMutablePointer<addrinfo>?
         guard getaddrinfo(host, nil, &hints, &result) == 0, let first = result else { return [] }
         defer { freeaddrinfo(result) }

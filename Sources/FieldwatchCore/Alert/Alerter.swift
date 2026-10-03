@@ -124,7 +124,7 @@ public struct Alerter: Sendable {
                     }
                     let request = UNNotificationRequest(
                         identifier: UUID().uuidString, content: content, trigger: nil)
-                    UNUserNotificationCenter.current().add(request)
+                    try? await UNUserNotificationCenter.current().add(request)
                     return
                 }
                 #endif
