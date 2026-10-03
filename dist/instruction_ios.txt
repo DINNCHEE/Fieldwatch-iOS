@@ -1,0 +1,84 @@
+====================================================================
+  FIELDWATCH FOR IOS - KURULUM VE YÜKLEME KILAVUZU (.IPA)
+====================================================================
+
+ÖNEMLİ: Bu klasörde artık sahte/placeholder IPA YOKTUR.
+Eski dist/Fieldwatch.ipa (16KB stub binary, CFBundleExecutable'siz)
+bilerek silindi çünkü Sideloadly ile kurulamazdı / açılmazdı.
+
+Gerçek IPA'yı üretmek için 2 yol var (Windows'ta iOS derlenemez):
+
+--------------------------------------------------------------------
+YÖNTEM A: GITHUB ACTIONS İLE 1-TIK DERLEME (Önerilen, ücretsiz)
+--------------------------------------------------------------------
+1. Bu klasörün tamamını GitHub'a push'layın:
+   git init && git add . && git commit -m "fieldwatch ios" 
+   git branch -M main && git remote add origin <repo-url> && git push -u origin main
+2. GitHub > Actions > "Build Fieldwatch iOS IPA" > Run workflow
+   veya main'e push sonrası otomatik çalışır.
+3. İş bitince Artifacts > "Fieldwatch-iOS-IPA" > Fieldwatch.ipa'yı indirin.
+   Workflow şunları doğrular:
+   - CFBundleExecutable mevcut
+   - Mach-O 64-bit arm64 binary
+   - fieldwatch-signatures-v2.json + radiodb.bin bundle içinde
+4. Aşağıdaki Sideloadly adımlarına geçin.
+
+--------------------------------------------------------------------
+YÖNTEM B: MAC + XCODE İLE YEREL DERLEME
+--------------------------------------------------------------------
+1. macOS + Xcode 15.4+ kurulu bir Mac'te bu klasörü açın.
+2. Fieldwatch.xcodeproj'u çift tıklayın.
+3. Signing & Capabilities:
+   - Team: kendi Apple ID'niz
+   - Bundle ID: app.fieldwatch.ios (değiştirmeyin)
+4. Gerçek iPhone'u takıp hedef olarak seçin, Cmd+R ile test edin.
+   BLE tarama sadece gerçek cihazda çalışır, simülatörde çalışmaz.
+5. Unsigned IPA (Sideloadly için):
+   xcodebuild archive -project Fieldwatch.xcodeproj -scheme Fieldwatch \
+     -sdk iphoneos -configuration Release \
+     -archivePath build/Fieldwatch.xcarchive \
+     CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+   APP_PATH=build/Fieldwatch.xcarchive/Products/Applications/Fieldwatch.app
+   mkdir -p build/Payload && cp -R "$APP_PATH" build/Payload/
+   cd build && zip -r9 Fieldwatch.ipa Payload
+6. Çıkan Fieldwatch.ipa'yı Windows'a kopyalayın.
+
+--------------------------------------------------------------------
+YÖNTEM 1: SIDELOADLY İLE YÜKLEME (Windows için En Kolay)
+--------------------------------------------------------------------
+Gereksinimler: Windows PC, USB Kablosu, Ücretsiz Apple ID
+
+1. Sideloadly'yi indirin: https://sideloadly.io
+2. Apple'ın sitesinden iTunes + iCloud for Windows kurun.
+3. iPhone'u USB ile bağlayın, "Bu Bilgisayara Güven"e dokunun.
+4. Sideloadly'yi açın:
+   - GERÇEK Fieldwatch.ipa'yı (Actions/Mac çıktısı, ~5-30MB) sürükleyin.
+     (Eski 658KB'lık sahte IPA'yı kullanmayın.)
+   - Apple ID e-postanızı girin, Start'a basın.
+     Apple 7 günlük ücretsiz sertifika verir.
+5. Yükleme bitince iPhone'da:
+   Ayarlar > Genel > VPN ve Aygıt Yönetimi > Apple ID'niz > Güven
+6. Fieldwatch'ı açın, Bluetooth + Konum izinlerini verin.
+
+Notlar:
+- Stock iOS'ta Wi-Fi tarama = sadece bağlı AP (NEHotspotNetwork).
+  Tam pasif 802.11 tarama sadece TrollStore/JB'de MobileWiFi ile açılır.
+- BLE (CoreBluetooth), GPS tail-detection, ATAK CoT yayını stock'ta çalışır.
+- 7 günde bir Sideloadly ile Refresh gerekir. TrollStore'da kalıcıdır.
+
+--------------------------------------------------------------------
+YÖNTEM 2: TROLLSTORE İLE YÜKLEME (iOS 14.0 - 16.6.1 / 17.0)
+--------------------------------------------------------------------
+1. Gerçek Fieldwatch.ipa'yı AirDrop/iCloud ile iPhone'a gönderin.
+2. TrollStore ile açıp Install'a dokunun.
+3. 7 gün sınırı yoktur, MobileWiFi tam tarama aktifleşir.
+
+--------------------------------------------------------------------
+YÖNTEM 3: ALTSTORE İLE YÜKLEME
+--------------------------------------------------------------------
+1. AltServer kurun (https://altstore.io), AltStore'u iPhone'a yükleyin.
+2. Gerçek IPA'yı Dosyalar'a kaydedip AltStore > My Apps > + ile seçin.
+
+====================================================================
+Off Grid Pete LLC - Fieldwatch iOS Port (MIT License)
+====================================================================

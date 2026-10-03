@@ -1,0 +1,339 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B10000000000000000000001 /* FieldwatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* FieldwatchApp.swift */; };
+		B10000000000000000000002 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* Models.swift */; };
+		B10000000000000000000003 /* SignatureEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* SignatureEngine.swift */; };
+		B10000000000000000000004 /* AdvPayloadDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* AdvPayloadDecoder.swift */; };
+		B10000000000000000000005 /* BleScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000005 /* BleScanner.swift */; };
+		B10000000000000000000006 /* WifiScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* WifiScanner.swift */; };
+		B10000000000000000000007 /* TakPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000007 /* TakPublisher.swift */; };
+		B10000000000000000000008 /* CoTravelEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* CoTravelEngine.swift */; };
+		B10000000000000000000009 /* FieldwatchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000009 /* FieldwatchViewModel.swift */; };
+		B10000000000000000000010 /* MainContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000010 /* MainContentView.swift */; };
+		B10000000000000000000011 /* RadarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* RadarView.swift */; };
+		B10000000000000000000012 /* LiveListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* LiveListView.swift */; };
+		B10000000000000000000013 /* DeviceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* DeviceDetailView.swift */; };
+		B10000000000000000000014 /* HuntView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* HuntView.swift */; };
+		B10000000000000000000015 /* FleetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* FleetsView.swift */; };
+		B10000000000000000000016 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000016 /* SettingsView.swift */; };
+		B10000000000000000000017 /* fieldwatch-signatures-v2.json in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000017 /* fieldwatch-signatures-v2.json */; };
+		B10000000000000000000018 /* radiodb.bin in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* radiodb.bin */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000001 /* FieldwatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchApp/FieldwatchApp.swift"; sourceTree = "<group>"; };
+		A10000000000000000000002 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Models/Models.swift"; sourceTree = "<group>"; };
+		A10000000000000000000003 /* SignatureEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Catalog/SignatureEngine.swift"; sourceTree = "<group>"; };
+		A10000000000000000000004 /* AdvPayloadDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Decoders/AdvPayloadDecoder.swift"; sourceTree = "<group>"; };
+		A10000000000000000000005 /* BleScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Radio/BleScanner.swift"; sourceTree = "<group>"; };
+		A10000000000000000000006 /* WifiScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Radio/WifiScanner.swift"; sourceTree = "<group>"; };
+		A10000000000000000000007 /* TakPublisher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Tactical/TakPublisher.swift"; sourceTree = "<group>"; };
+		A10000000000000000000008 /* CoTravelEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/Tracking/CoTravelEngine.swift"; sourceTree = "<group>"; };
+		A10000000000000000000009 /* FieldwatchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchCore/ViewModels/FieldwatchViewModel.swift"; sourceTree = "<group>"; };
+		A10000000000000000000010 /* MainContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/MainContentView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000011 /* RadarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/RadarView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000012 /* LiveListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/LiveListView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000013 /* DeviceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/DeviceDetailView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000014 /* HuntView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/HuntView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000015 /* FleetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/FleetsView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000016 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/FieldwatchUI/Views/SettingsView.swift"; sourceTree = "<group>"; };
+		A10000000000000000000017 /* fieldwatch-signatures-v2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Resources/fieldwatch-signatures-v2.json"; sourceTree = "<group>"; };
+		A10000000000000000000018 /* radiodb.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = "Resources/radiodb.bin"; sourceTree = "<group>"; };
+		A10000000000000000000019 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000020 /* Fieldwatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Fieldwatch.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000021 /* Fieldwatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Fieldwatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		P20000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		F1E1D0000000000000000002 /* main */ = {
+			isa = PBXGroup;
+			children = (
+				F1E1D0000000000000000010 /* Sources */,
+				F1E1D0000000000000000011 /* Resources */,
+				A10000000000000000000019 /* Info.plist */,
+				A10000000000000000000020 /* Fieldwatch.entitlements */,
+				F1E1D0000000000000000012 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F1E1D0000000000000000010 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000001 /* FieldwatchApp.swift */,
+				A10000000000000000000002 /* Models.swift */,
+				A10000000000000000000003 /* SignatureEngine.swift */,
+				A10000000000000000000004 /* AdvPayloadDecoder.swift */,
+				A10000000000000000000005 /* BleScanner.swift */,
+				A10000000000000000000006 /* WifiScanner.swift */,
+				A10000000000000000000007 /* TakPublisher.swift */,
+				A10000000000000000000008 /* CoTravelEngine.swift */,
+				A10000000000000000000009 /* FieldwatchViewModel.swift */,
+				A10000000000000000000010 /* MainContentView.swift */,
+				A10000000000000000000011 /* RadarView.swift */,
+				A10000000000000000000012 /* LiveListView.swift */,
+				A10000000000000000000013 /* DeviceDetailView.swift */,
+				A10000000000000000000014 /* HuntView.swift */,
+				A10000000000000000000015 /* FleetsView.swift */,
+				A10000000000000000000016 /* SettingsView.swift */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+		F1E1D0000000000000000011 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000017 /* fieldwatch-signatures-v2.json */,
+				A10000000000000000000018 /* radiodb.bin */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		F1E1D0000000000000000012 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000021 /* Fieldwatch.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		T000000000000000000000001 /* Fieldwatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = L000000000000000000000002 /* Build configuration list for PBXNativeTarget "Fieldwatch" */;
+			buildPhases = (
+				P20000000000000000000001 /* Sources */,
+				P20000000000000000000002 /* Frameworks */,
+				P20000000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Fieldwatch;
+			productName = Fieldwatch;
+			productReference = A10000000000000000000021 /* Fieldwatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F1E1D0000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					T000000000000000000000001 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = L000000000000000000000001 /* Build configuration list for PBXProject "Fieldwatch" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = F1E1D0000000000000000002 /* main */;
+			productRefGroup = F1E1D0000000000000000012 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				T000000000000000000000001 /* Fieldwatch */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		P20000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000000000000000000017 /* fieldwatch-signatures-v2.json in Resources */,
+				B10000000000000000000018 /* radiodb.bin in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		P20000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000000000000000000001 /* FieldwatchApp.swift in Sources */,
+				B10000000000000000000002 /* Models.swift in Sources */,
+				B10000000000000000000003 /* SignatureEngine.swift in Sources */,
+				B10000000000000000000004 /* AdvPayloadDecoder.swift in Sources */,
+				B10000000000000000000005 /* BleScanner.swift in Sources */,
+				B10000000000000000000006 /* WifiScanner.swift in Sources */,
+				B10000000000000000000007 /* TakPublisher.swift in Sources */,
+				B10000000000000000000008 /* CoTravelEngine.swift in Sources */,
+				B10000000000000000000009 /* FieldwatchViewModel.swift in Sources */,
+				B10000000000000000000010 /* MainContentView.swift in Sources */,
+				B10000000000000000000011 /* RadarView.swift in Sources */,
+				B10000000000000000000012 /* LiveListView.swift in Sources */,
+				B10000000000000000000013 /* DeviceDetailView.swift in Sources */,
+				B10000000000000000000014 /* HuntView.swift in Sources */,
+				B10000000000000000000015 /* FleetsView.swift in Sources */,
+				B10000000000000000000016 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		C000000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		C000000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C000000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Fieldwatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Fieldwatch;
+				INFOPLIST_KEY_LSRequiresIPhoneOS = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.fieldwatch.ios";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C000000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Fieldwatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Fieldwatch;
+				INFOPLIST_KEY_LSRequiresIPhoneOS = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "app.fieldwatch.ios";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		L000000000000000000000001 /* Build configuration list for PBXProject "Fieldwatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C000000000000000000000001 /* Debug */,
+				C000000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		L000000000000000000000002 /* Build configuration list for PBXNativeTarget "Fieldwatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C000000000000000000000003 /* Debug */,
+				C000000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F1E1D0000000000000000001 /* Project object */;
+}

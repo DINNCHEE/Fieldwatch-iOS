@@ -1,0 +1,76 @@
+name: Build Fieldwatch iOS IPA
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-ipa:
+    name: Build & Package Fieldwatch.ipa
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 15.4
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          xcodebuild -version
+          xcodebuild -list -project Fieldwatch.xcodeproj
+
+      - name: Build unsigned IPA for Sideloadly
+        run: |
+          set -e
+          rm -rf build dist/Fieldwatch.ipa
+          mkdir -p build dist
+
+          # Archive without code signing (Sideloadly signs with free Apple ID)
+          xcodebuild archive \
+            -project Fieldwatch.xcodeproj \
+            -scheme Fieldwatch \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath "$(pwd)/build/Fieldwatch.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+          APP_PATH="build/Fieldwatch.xcarchive/Products/Applications/Fieldwatch.app"
+          ls -lh "$APP_PATH"
+          /usr/bin/plutil -p "$APP_PATH/Info.plist"
+
+          # Sanity checks required by iOS + Sideloadly
+          /usr/bin/plutil -extract CFBundleExecutable raw "$APP_PATH/Info.plist" | grep -q Fieldwatch
+          test -f "$APP_PATH/Fieldwatch"
+          file "$APP_PATH/Fieldwatch" | grep -q "Mach-O 64-bit executable arm64"
+
+          # Package IPA
+          rm -rf build/Payload
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+          cd build
+          zip -r9 Fieldwatch.ipa Payload
+          cd ..
+          mv build/Fieldwatch.ipa dist/Fieldwatch.ipa
+          ls -lh dist/Fieldwatch.ipa
+          unzip -l dist/Fieldwatch.ipa
+
+      - name: Upload Fieldwatch.ipa Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Fieldwatch-iOS-IPA
+          path: dist/Fieldwatch.ipa
+          retention-days: 30
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Fieldwatch.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
